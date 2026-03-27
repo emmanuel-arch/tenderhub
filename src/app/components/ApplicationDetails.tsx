@@ -1,0 +1,322 @@
+import { useParams, useNavigate } from 'react-router';
+import { 
+  ArrowLeft, 
+  Download, 
+  FileText, 
+  Building2,
+  Calendar,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  XCircle,
+  AlertCircle
+} from 'lucide-react';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { mockApplications } from '../data/mockData';
+import { toast } from 'sonner';
+import { Toaster } from './ui/sonner';
+
+export function ApplicationDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const application = mockApplications.find(a => a.id === id);
+
+  if (!application) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>Application Not Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency: 'KES',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const getStatusIcon = (status: string) => {
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('approved')) {
+      return <CheckCircle className="w-5 h-5 text-green-600" />;
+    } else if (lowerStatus.includes('rejected')) {
+      return <XCircle className="w-5 h-5 text-red-600" />;
+    } else if (lowerStatus.includes('review') || lowerStatus.includes('pending')) {
+      return <Clock className="w-5 h-5 text-amber-600" />;
+    } else {
+      return <FileText className="w-5 h-5 text-blue-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'submitted':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return '';
+    }
+  };
+
+  const handleDownload = () => {
+    toast.success('Download started', {
+      description: 'Your bid bond document is being downloaded.',
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Toaster />
+      
+      <header className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-2">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">Application Details</h1>
+              <p className="text-slate-600">Track your bid bond application status</p>
+            </div>
+            <Badge variant="outline" className={`${getStatusColor(application.status)} text-base px-4 py-2`}>
+              {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+            </Badge>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Application Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-slate-500 mb-1">Application ID</div>
+                    <div className="font-medium">{application.id}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-500 mb-1">Tender Number</div>
+                    <div className="font-medium">{application.tenderNumber}</div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <div className="text-sm text-slate-500 mb-1">Tender Title</div>
+                  <div className="font-medium">{application.tenderTitle}</div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <Building2 className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <div>
+                      <div className="text-sm text-slate-500 mb-1">Selected Bank</div>
+                      <div className="font-medium">{application.bankName}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <DollarSign className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <div>
+                      <div className="text-sm text-slate-500 mb-1">Bond Amount</div>
+                      <div className="font-medium">{application.bondAmount ? formatCurrency(application.bondAmount) : 'N/A'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <div>
+                      <div className="text-sm text-slate-500 mb-1">Submitted On</div>
+                      <div className="font-medium">{formatDate(application.submittedDate)}</div>
+                    </div>
+                  </div>
+                  {application.approvalDate && (
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm text-slate-500 mb-1">Approved On</div>
+                        <div className="font-medium">{formatDate(application.approvalDate)}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {application.status === 'approved' && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <AlertTitle className="text-green-900">Application Approved</AlertTitle>
+                <AlertDescription className="text-green-800">
+                  Your bid bond has been approved and is ready for download. You can now proceed with your tender submission.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {application.status === 'rejected' && application.rejectionReason && (
+              <Alert className="border-red-200 bg-red-50">
+                <XCircle className="h-5 w-5 text-red-600" />
+                <AlertTitle className="text-red-900">Application Rejected</AlertTitle>
+                <AlertDescription className="text-red-800">
+                  <strong>Reason:</strong> {application.rejectionReason}
+                  <div className="mt-2">
+                    You can submit a new application with the correct documentation.
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {application.status === 'pending' && (
+              <Alert className="border-amber-200 bg-amber-50">
+                <Clock className="h-5 w-5 text-amber-600" />
+                <AlertTitle className="text-amber-900">Application Under Review</AlertTitle>
+                <AlertDescription className="text-amber-800">
+                  Your application is currently being reviewed by {application.bankName}. This typically takes 2-5 business days.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Application Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {application.statusHistory?.map((update, index) => (
+                    <div key={index} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          index === 0 ? 'bg-blue-100' : 'bg-slate-100'
+                        }`}>
+                          {getStatusIcon(update.status)}
+                        </div>
+                        {index < (application.statusHistory?.length || 0) - 1 && (
+                          <div className="w-0.5 h-full bg-slate-200 my-2"></div>
+                        )}
+                      </div>
+                      <div className="flex-1 pb-8">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-semibold">{update.status}</div>
+                          <div className="text-sm text-slate-500">{formatDate(update.date)}</div>
+                        </div>
+                        <div className="text-sm text-slate-600">{update.notes}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            {application.status === 'approved' && application.documentUrl && (
+              <Card className="border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-900">Download Document</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-slate-600">
+                    Your bid bond document is ready for download. This document is required for your tender submission.
+                  </div>
+                  <Button className="w-full" size="lg" onClick={handleDownload}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Bid Bond
+                  </Button>
+                  <div className="text-xs text-slate-500 text-center">
+                    Valid PDF document • Digitally signed
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate(`/tender/${application.tenderId}`)}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Tender Details
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => {
+                    toast.info('Contact support', {
+                      description: 'Support team will reach out within 24 hours.',
+                    });
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  Contact Support
+                </Button>
+                {application.status === 'rejected' && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => navigate(`/tender/${application.tenderId}/banks`)}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Submit New Application
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-blue-900">Need Help?</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm text-blue-800">
+                <p>
+                  <strong>For approved applications:</strong> Download and submit the bid bond with your tender documents.
+                </p>
+                <p>
+                  <strong>For pending applications:</strong> Please wait for bank review. You'll be notified of any updates.
+                </p>
+                <p>
+                  <strong>For rejected applications:</strong> Review the rejection reason and submit a new application with correct documents.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
