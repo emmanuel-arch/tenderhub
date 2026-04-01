@@ -25,7 +25,7 @@ function AdminRoute({ children }: { children: ReactNode }) {
   if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
-  return <>{children}</>;
+  return <>{children     }</>;
 }
 
 export default function App() {
@@ -35,7 +35,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<TenderList />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/tender/:id" element={<TenderDetails />} />
+          <Route path="/tender/:id" element={<TenderDetails />}     />
           <Route path="/tender/:id/banks" element={<PrivateRoute><BankSelection /></PrivateRoute>} />
           <Route path="/tender/:id/bid-bond/:bankId" element={<PrivateRoute><BidBondForm /></PrivateRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
