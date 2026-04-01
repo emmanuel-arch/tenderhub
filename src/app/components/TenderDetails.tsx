@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Tender } from '../data/mockData';
 import { fetchTenderById } from '../services/tenderService';
@@ -11,8 +14,10 @@ import { fetchTenderById } from '../services/tenderService';
 export function TenderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, logout, isAdmin } = useAuth();
   const [tender, setTender] = useState<Tender | null>(null);
   const [loading, setLoading] = useState(true);
+  const [manualBondAmount, setManualBondAmount] = useState('');
 
   useEffect(() => {
     const loadTender = async () => {
@@ -36,7 +41,7 @@ export function TenderDetails() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -74,11 +79,29 @@ export function TenderDetails() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Button variant="ghost" onClick={() => navigate('/')} className="mb-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate('/')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Tenders
           </Button>
+          {user && (
+            <div className="flex items-center gap-2">
+              {isAdmin ? (
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  My Dashboard
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -143,18 +166,6 @@ export function TenderDetails() {
                   <p className="text-slate-600 leading-relaxed">{tender.description}</p>
                 </div>
 
-                <Separator />
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button className="flex-1" variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Tender Document
-                  </Button>
-                  <Button className="flex-1" variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Download BOQ
-                  </Button>
-                </div>
               </CardContent>
             </Card>
 
@@ -242,7 +253,7 @@ export function TenderDetails() {
                     <Button 
                       className="w-full" 
                       size="lg"
-                      onClick={() => navigate(`/tender/${tender.id}/banks`)}
+                      onClick={() => navigate(`/tender/${tender.id}/banks`, { state: { tender } })}
                     >
                       Apply for Bid Bond
                     </Button>
@@ -251,14 +262,36 @@ export function TenderDetails() {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>No Bid Bond Required</CardTitle>
+                    <CardTitle>No Bid Bond Specified</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-slate-600 mb-4">
-                      This tender does not require a bid bond. You can proceed with your application directly.
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-slate-600">
+                      This tender has no bid bond amount set. Enter the amount manually to apply through a bank.
                     </p>
-                    <Button className="w-full" size="lg">
-                      Submit Application
+                    <div className="space-y-2">
+                      <Label htmlFor="manual-bond-amount">Bid Bond Amount (KES)</Label>
+                      <Input
+                        id="manual-bond-amount"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 500000"
+                        value={manualBondAmount}
+                        onChange={e => setManualBondAmount(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      disabled={!manualBondAmount || Number(manualBondAmount) <= 0}
+                      onClick={() =>
+                        navigate(`/tender/${tender.id}/banks`, {
+                          state: {
+                            tender: { ...tender, bidBondRequired: true, bidBondAmount: Number(manualBondAmount) },
+                          },
+                        })
+                      }
+                    >
+                      Apply for Bid Bond
                     </Button>
                   </CardContent>
                 </Card>
@@ -272,10 +305,6 @@ export function TenderDetails() {
                   <Button variant="outline" className="w-full justify-start">
                     <Download className="w-4 h-4 mr-2" />
                     Save for Later
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <AlertCircle className="w-4 h-4 mr-2" />
-                    Set Reminder
                   </Button>
                 </CardContent>
               </Card>

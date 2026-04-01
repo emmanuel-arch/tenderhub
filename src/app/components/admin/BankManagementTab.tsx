@@ -1,13 +1,13 @@
 import { Plus, Building2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Bank } from '../../data/mockData';
+import { BankDto } from '../../services/api';
 import { BankListItem } from './BankListItem';
 
 interface Props {
-  banks: Bank[];
+  banks: BankDto[];
   onAdd: () => void;
-  onEdit: (bank: Bank) => void;
+  onEdit: (bank: BankDto) => void;
   onDelete: (id: string) => void;
 }
 

@@ -99,11 +99,10 @@ export function TenderList() {
                     <User className="w-4 h-4 inline mr-1" />
                     {user.name}
                   </div>
-                  {user.role === 'client' && (
-                    <Button variant="outline" onClick={() => navigate('/dashboard')}>My Dashboard</Button>
-                  )}
-                  {isAdmin && (
+                  {isAdmin ? (
                     <Button variant="outline" onClick={() => navigate('/admin')}>Admin Panel</Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => navigate('/dashboard')}>My Dashboard</Button>
                   )}
                   <Button variant="ghost" size="sm" onClick={logout}>
                     <LogOut className="w-4 h-4" />

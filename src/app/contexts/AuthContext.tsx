@@ -1,57 +1,67 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'client' | 'admin';
-}
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authApi, UserProfile } from '../services/api';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string) => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, adminCode?: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo
-const mockUsers: User[] = [
-  { id: '1', email: 'client@example.com', name: 'John Doe', role: 'client' },
-  { id: '2', email: 'admin@example.com', name: 'Admin User', role: 'admin' },
-  { id: '3', email: 'jane@example.com', name: 'Jane Smith', role: 'client' },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (email: string) => {
-    // Find user by email or create a new client user
-    let foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!foundUser) {
-      foundUser = {
-        id: `user-${Date.now()}`,
-        email: email,
-        name: email.split('@')[0],
-        role: 'client'
-      };
+  // Rehydrate from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('auth_user');
+    const token  = localStorage.getItem('auth_token');
+    if (stored && token) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+      }
     }
-    
-    setUser(foundUser);
+    setLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const res = await authApi.login(email, password);
+    localStorage.setItem('auth_token', res.token);
+    localStorage.setItem('auth_user', JSON.stringify(res.user));
+    setUser(res.user);
+  };
+
+  const register = async (name: string, email: string, password: string, adminCode?: string) => {
+    const res = await authApi.register(name, email, password, adminCode);
+    localStorage.setItem('auth_token', res.token);
+    localStorage.setItem('auth_user', JSON.stringify(res.user));
+    setUser(res.user);
   };
 
   const logout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     setUser(null);
   };
 
-  const isAuthenticated = !!user;
-  const isAdmin = user?.role === 'admin';
-
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
+      isAdmin: user?.role?.toLowerCase() === 'admin',
+      loading,
+      login,
+      register,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -59,8 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 }

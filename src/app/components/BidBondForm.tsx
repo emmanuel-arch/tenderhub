@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Upload, FileText, Building2, DollarSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
-import { tenders, banks } from '../data/mockData';
 import { CompanyInfoStep } from './bidbond/CompanyInfoStep';
 import { FinancialDetailsStep } from './bidbond/FinancialDetailsStep';
 import { DocumentUploadStep } from './bidbond/DocumentUploadStep';
 import { ReviewStep } from './bidbond/ReviewStep';
+import { tendersApi, applicationsApi, BankDto } from '../services/api';
+import { Tender } from '../data/mockData';
+import { toast } from 'sonner';
+import { Toaster } from './ui/sonner';
 
 const STEPS = [
   { number: 1, title: 'Company Information', icon: Building2 },
@@ -57,18 +60,25 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 export function BidBondForm() {
   const { id, bankId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const state = (location.state as any) ?? {};
+  const tender: Tender | null = state.tender ?? null;
+  const bank: BankDto | null = state.bank ?? null;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM);
-
-  const tender = tenders.find(t => t.id === id);
-  const bank   = banks.find(b => b.id === bankId);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!tender || !bank) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Card className="max-w-md">
           <CardHeader><CardTitle>Invalid Request</CardTitle></CardHeader>
-          <CardContent><Button onClick={() => navigate('/')}>Back to Tenders</Button></CardContent>
+          <CardContent>
+            <p className="text-slate-600 mb-4">Tender or bank information is missing. Please start from the bank selection page.</p>
+            <Button onClick={() => navigate(id ? `/tender/${id}/banks` : '/')}>Go Back</Button>
+          </CardContent>
         </Card>
       </div>
     );
@@ -77,11 +87,75 @@ export function BidBondForm() {
   const handleChange = (field: string, value: string) =>
     setFormData(prev => ({ ...prev, [field]: value }));
 
-  const calculateFees = () => {
-    const [basePart, percentPart] = bank.fees.split(' + ');
-    const baseFee = parseInt(basePart.replace(/[^0-9]/g, ''));
-    const percentage = parseFloat(percentPart) / 100;
-    return baseFee + tender.bidBondAmount * percentage;
+  const tryParseAmount = (fees: string): number => {
+    const parts = fees.split('+').map(p => p.trim());
+    let base = 0;
+    let pct = 0;
+    for (const part of parts) {
+      const num = parseFloat(part.replace(/[^0-9.]/g, ''));
+      if (part.includes('%')) pct = num;
+      else base = num;
+    }
+    return base + (tender.bidBondAmount * pct) / 100;
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.companyName || !formData.registrationNumber || !formData.contactPerson || !formData.email || !formData.phone || !formData.address) {
+      toast.error('Missing required fields', { description: 'Please fill in all company information fields.' });
+      setCurrentStep(1);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Find or create the tender in our backend by external ID
+      const tenderList = await tendersApi.list({ externalId: tender.id });
+      let backendTenderId: string;
+
+      if (tenderList.data.length > 0) {
+        backendTenderId = tenderList.data[0].id;
+      } else {
+        // Create the tender in our backend from the external data
+        const created = await tendersApi.create({
+          externalId: tender.id,
+          title: tender.title,
+          tenderNumber: tender.tenderNumber,
+          procuringEntity: tender.procuringEntity,
+          deadline: new Date(tender.deadline).toISOString(),
+          industry: tender.industry,
+          bidBondRequired: tender.bidBondRequired,
+          bidBondAmount: tender.bidBondAmount,
+          category: tender.category === 'government' ? 'Government' : 'Private',
+          subCategory: tender.subCategory ?? 'Goods',
+          summary: tender.summary,
+          description: tender.description,
+          documentUrl: tender.documentUrl ?? '',
+          requiredDocuments: tender.requiredDocuments ?? [],
+        });
+        backendTenderId = created.id;
+      }
+
+      await applicationsApi.create({
+        tenderId: backendTenderId,
+        bankId: bankId!,
+        companyName: formData.companyName,
+        businessRegistrationNumber: formData.registrationNumber,
+        contactPerson: formData.contactPerson,
+        phoneNumber: formData.phone,
+        contactEmail: formData.email,
+        physicalAddress: formData.address,
+        annualRevenue: formData.annualRevenue ? parseFloat(formData.annualRevenue) : undefined,
+        companyNetWorth: formData.netWorth ? parseFloat(formData.netWorth) : undefined,
+        bankAccountNumber: formData.bankAccount || undefined,
+      });
+
+      toast.success('Application submitted!');
+      navigate('/dashboard', { state: { applicationSubmitted: true } });
+    } catch (err: any) {
+      toast.error('Submission failed', { description: err.message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderStep = () => {
@@ -94,7 +168,7 @@ export function BidBondForm() {
           bankAccount={formData.bankAccount}
           bankName={bank.name}
           bondAmount={tender.bidBondAmount}
-          processingFee={calculateFees()}
+          processingFee={tryParseAmount(bank.fees)}
           onChange={handleChange}
         />
       );
@@ -105,7 +179,7 @@ export function BidBondForm() {
           tenderTitle={tender.title}
           bankName={bank.name}
           bondAmount={tender.bidBondAmount}
-          processingFee={calculateFees()}
+          processingFee={tryParseAmount(bank.fees)}
           processingTime={bank.processingTime}
         />
       );
@@ -115,6 +189,8 @@ export function BidBondForm() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <Toaster />
+
       <header className="bg-white border-b">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Button variant="ghost" onClick={() => navigate(`/tender/${id}/banks`)} className="mb-2">
@@ -142,19 +218,19 @@ export function BidBondForm() {
             {renderStep()}
 
             <div className="flex justify-between mt-8 pt-6 border-t">
-              <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 1}>
+              <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 1 || submitting}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Previous
               </Button>
               {currentStep < STEPS.length ? (
-                <Button onClick={() => setCurrentStep(s => s + 1)}>
+                <Button onClick={() => setCurrentStep(s => s + 1)} disabled={submitting}>
                   Next
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button size="lg" onClick={() => navigate('/dashboard', { state: { showSuccess: true } })}>
+                <Button size="lg" onClick={handleSubmit} disabled={submitting}>
                   <Check className="w-4 h-4 mr-2" />
-                  Submit Application
+                  {submitting ? 'Submitting...' : 'Submit Application'}
                 </Button>
               )}
             </div>

@@ -5,19 +5,21 @@ import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
-import { Bank } from '../../data/mockData';
+import { BankDto, CreateBankDto } from '../../services/api';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editingBank: Bank | null;
-  formData: Partial<Bank>;
-  onFormChange: (data: Partial<Bank>) => void;
+  editingBank: BankDto | null;
+  formData: Partial<CreateBankDto>;
+  onFormChange: (data: Partial<CreateBankDto>) => void;
   onSave: () => void;
+  saving?: boolean;
 }
 
-export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFormChange, onSave }: Props) {
-  const set = (field: keyof Bank, value: unknown) => onFormChange({ ...formData, [field]: value });
+export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFormChange, onSave, saving }: Props) {
+  const set = (field: keyof CreateBankDto, value: unknown) =>
+    onFormChange({ ...formData, [field]: value });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,7 +67,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
                 min="0"
                 max="5"
                 step="0.1"
-                value={formData.rating || 4.0}
+                value={formData.rating ?? 4.0}
                 onChange={(e) => set('rating', parseFloat(e.target.value) || 4.0)}
               />
             </div>
@@ -97,13 +99,13 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={onSave}>
+          <Button onClick={onSave} disabled={saving}>
             <CheckCircle className="w-4 h-4 mr-2" />
-            {editingBank ? 'Update Bank' : 'Add Bank'}
+            {saving ? 'Saving...' : editingBank ? 'Update Bank' : 'Add Bank'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,23 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { 
-  ArrowLeft, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Download, 
+import {
+  ArrowLeft,
+  FileText,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Download,
   Bell,
   Bookmark,
   TrendingUp,
-  Building2
+  Building2,
+  Loader2,
+  LogOut
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Separator } from './ui/separator';
-import { mockApplications, tenders } from '../data/mockData';
+import { applicationsApi, ApplicationDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -25,18 +27,23 @@ import { Toaster } from './ui/sonner';
 export function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
-  const [savedTenders] = useState([tenders[0], tenders[2], tenders[4]]);
+  const { isAuthenticated, logout } = useAuth();
+  const [userApplications, setUserApplications] = useState<ApplicationDto[]>([]);
+  const [loadingApps, setLoadingApps] = useState(true);
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
+    if (!isAuthenticated) navigate('/login');
   }, [isAuthenticated, navigate]);
 
-  // Filter applications for current user
-  const userApplications = mockApplications.filter(app => app.userId === user?.id);
+  // Fetch real applications from API
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    applicationsApi.list()
+      .then(res => setUserApplications(res.data))
+      .catch(err => toast.error('Failed to load applications', { description: err.message }))
+      .finally(() => setLoadingApps(false));
+  }, [isAuthenticated]);
 
   // Show success message if just submitted an application
   useEffect(() => {
@@ -128,6 +135,10 @@ export function Dashboard() {
               </Button>
               <h1 className="text-2xl font-bold">My Dashboard</h1>
             </div>
+            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
       </header>
@@ -135,7 +146,7 @@ export function Dashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600">Total Applications</CardTitle>
@@ -144,7 +155,7 @@ export function Dashboard() {
               <div className="text-3xl font-bold">{userApplications.length}</div>
               <div className="flex items-center gap-1 text-sm text-green-600 mt-1">
                 <TrendingUp className="w-4 h-4" />
-                <span>+2 this month</span>
+                <span>All time</span>
               </div>
             </CardContent>
           </Card>
@@ -155,7 +166,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {userApplications.filter(a => a.status === 'approved').length}
+                {userApplications.filter(a => a.status.toLowerCase() === 'approved').length}
               </div>
               <div className="text-sm text-slate-600 mt-1">Ready to download</div>
             </CardContent>
@@ -167,19 +178,9 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-amber-600">
-                {userApplications.filter(a => a.status === 'pending').length}
+                {userApplications.filter(a => a.status.toLowerCase() === 'pending').length}
               </div>
               <div className="text-sm text-slate-600 mt-1">Under review</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">Saved Tenders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{savedTenders.length}</div>
-              <div className="text-sm text-slate-600 mt-1">For later review</div>
             </CardContent>
           </Card>
         </div>
@@ -188,13 +189,18 @@ export function Dashboard() {
         <Tabs defaultValue="applications" className="space-y-6">
           <TabsList>
             <TabsTrigger value="applications">My Applications</TabsTrigger>
-            <TabsTrigger value="saved">Saved Tenders</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           {/* Applications Tab */}
           <TabsContent value="applications" className="space-y-4">
-            {userApplications.map((application) => (
+            {loadingApps && (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            )}
+
+            {!loadingApps && userApplications.map((application) => (
               <Card key={application.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
@@ -208,7 +214,7 @@ export function Dashboard() {
                           <span className="font-medium">Bank:</span> {application.bankName}
                         </div>
                         <div>
-                          <span className="font-medium">Submitted:</span> {formatDate(application.submittedDate)}
+                          <span className="font-medium">Submitted:</span> {formatDate(application.submittedAt)}
                         </div>
                         {application.bondAmount && (
                           <div>
@@ -228,8 +234,8 @@ export function Dashboard() {
                     <Button onClick={() => navigate(`/application/${application.id}`)}>
                       View Details
                     </Button>
-                    {application.status === 'approved' && (
-                      <Button variant="outline">
+                    {application.status.toLowerCase() === 'approved' && application.documentUrl && (
+                      <Button variant="outline" onClick={() => window.open(application.documentUrl!, '_blank')}>
                         <Download className="w-4 h-4 mr-2" />
                         Quick Download
                       </Button>
@@ -239,7 +245,7 @@ export function Dashboard() {
               </Card>
             ))}
 
-            {userApplications.length === 0 && (
+            {!loadingApps && userApplications.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center">
                   <FileText className="w-12 h-12 mx-auto text-slate-400 mb-4" />
@@ -251,43 +257,6 @@ export function Dashboard() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Saved Tenders Tab */}
-          <TabsContent value="saved" className="space-y-4">
-            {savedTenders.map((tender) => (
-              <Card key={tender.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="mb-2 leading-snug">{tender.title}</CardTitle>
-                      <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                        <div className="flex items-center gap-1">
-                          <Building2 className="w-4 h-4" />
-                          <span>{tender.procuringEntity}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>Deadline: {formatDate(tender.deadline)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <Badge variant="outline">{tender.industry}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-3">
-                    <Button onClick={() => navigate(`/tender/${tender.id}`)}>
-                      View Details
-                    </Button>
-                    <Button variant="outline">
-                      <Bookmark className="w-4 h-4 mr-2" />
-                      Remove from Saved
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </TabsContent>
 
           {/* Notifications Tab */}

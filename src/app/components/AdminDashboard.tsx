@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Shield, LogOut } from 'lucide-react';
+import { Shield, LogOut, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { banks as initialBanks, Bank, mockApplications } from '../data/mockData';
-import { mockUsers } from '../data/users';
+import { banksApi, BankDto, CreateBankDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -13,16 +12,16 @@ import { BankManagementTab } from './admin/BankManagementTab';
 import { BankFormDialog } from './admin/BankFormDialog';
 import { ApplicationsTab } from './admin/ApplicationsTab';
 
-const DEFAULT_FORM: Partial<Bank> = {
+const DEFAULT_FORM: Partial<CreateBankDto> = {
   name: '',
   processingTime: '',
   fees: '',
   digitalOption: false,
   rating: 4.0,
-  logo: 'https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=200&h=200&fit=crop',
+  logo: '',
 };
 
-function StatCard({ label, value, sub, color }: { label: string; value: number; sub: string; color?: string }) {
+function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub: string; color?: string }) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -38,20 +37,21 @@ function StatCard({ label, value, sub, color }: { label: string; value: number; 
 
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const { user, isAdmin, logout } = useAuth();
-  const [banks, setBanks] = useState<Bank[]>(initialBanks);
+  const { user, logout } = useAuth();
+
+  const [banks, setBanks] = useState<BankDto[]>([]);
+  const [loadingBanks, setLoadingBanks] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBank, setEditingBank] = useState<Bank | null>(null);
-  const [formData, setFormData] = useState<Partial<Bank>>(DEFAULT_FORM);
+  const [editingBank, setEditingBank] = useState<BankDto | null>(null);
+  const [formData, setFormData] = useState<Partial<CreateBankDto>>(DEFAULT_FORM);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (user && !isAdmin) {
-      toast.error('Access denied', { description: 'You do not have permission to access the admin panel.' });
-      navigate('/dashboard');
-    } else if (!user) {
-      navigate('/login');
-    }
-  }, [user, isAdmin, navigate]);
+    banksApi.list()
+      .then(setBanks)
+      .catch(err => toast.error('Failed to load banks', { description: err.message }))
+      .finally(() => setLoadingBanks(false));
+  }, []);
 
   const openAddDialog = () => {
     setEditingBank(null);
@@ -59,55 +59,61 @@ export function AdminDashboard() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (bank: Bank) => {
+  const openEditDialog = (bank: BankDto) => {
     setEditingBank(bank);
-    setFormData(bank);
+    setFormData({
+      name: bank.name,
+      logo: bank.logo,
+      processingTime: bank.processingTime,
+      fees: bank.fees,
+      digitalOption: bank.digitalOption,
+      rating: bank.rating,
+    });
     setIsDialogOpen(true);
   };
 
-  const handleDeleteBank = (bankId: string) => {
-    if (!window.confirm('Are you sure you want to delete this bank? This action cannot be undone.')) return;
-    setBanks(banks.filter(b => b.id !== bankId));
-    toast.success('Bank deleted', { description: 'The bank has been removed from the system.' });
+  const handleDeleteBank = async (bankId: string) => {
+    if (!window.confirm('Are you sure you want to delete this bank?')) return;
+    try {
+      await banksApi.remove(bankId);
+      setBanks(prev => prev.filter(b => b.id !== bankId));
+      toast.success('Bank deleted');
+    } catch (err: any) {
+      toast.error('Delete failed', { description: err.message });
+    }
   };
 
-  const handleSaveBank = () => {
+  const handleSaveBank = async () => {
     if (!formData.name || !formData.processingTime || !formData.fees) {
       toast.error('Missing fields', { description: 'Please fill in all required fields.' });
       return;
     }
 
-    if (editingBank) {
-      setBanks(banks.map(b => b.id === editingBank.id ? { ...b, ...formData } as Bank : b));
-      toast.success('Bank updated', { description: `${formData.name} has been updated successfully.` });
-    } else {
-      const newBank: Bank = {
-        id: (banks.length + 1).toString(),
-        name: formData.name,
-        logo: formData.logo || '',
-        processingTime: formData.processingTime,
-        fees: formData.fees,
-        digitalOption: formData.digitalOption || false,
-        rating: formData.rating || 4.0,
-      };
-      setBanks([...banks, newBank]);
-      toast.success('Bank added', { description: `${formData.name} has been added to the system.` });
+    setSaving(true);
+    try {
+      if (editingBank) {
+        const updated = await banksApi.update(editingBank.id, formData);
+        setBanks(prev => prev.map(b => b.id === editingBank.id ? updated : b));
+        toast.success('Bank updated', { description: `${updated.name} updated successfully.` });
+      } else {
+        const created = await banksApi.create(formData as CreateBankDto);
+        setBanks(prev => [...prev, created]);
+        toast.success('Bank added', { description: `${created.name} added to the system.` });
+      }
+      setIsDialogOpen(false);
+      setEditingBank(null);
+      setFormData(DEFAULT_FORM);
+    } catch (err: any) {
+      toast.error('Save failed', { description: err.message });
+    } finally {
+      setSaving(false);
     }
-
-    setIsDialogOpen(false);
-    setEditingBank(null);
-    setFormData(DEFAULT_FORM);
   };
 
   const handleLogout = () => {
     logout();
-    toast.success('Logged out successfully');
     navigate('/login');
   };
-
-  const approved = mockApplications.filter(a => a.status === 'approved').length;
-  const pending  = mockApplications.filter(a => a.status === 'pending').length;
-  const clients  = mockUsers.filter(u => u.role === 'client').length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -117,8 +123,8 @@ export function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Shield className="w-6 h-6 text-blue-800" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Admin Control Panel</h1>
@@ -140,12 +146,18 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <StatCard label="Total Applications" value={mockApplications.length} sub="All submissions" />
-          <StatCard label="Active Users" value={clients} sub="Client accounts" />
-          <StatCard label="Total Banks" value={banks.length} sub="Active providers" />
-          <StatCard label="Approved" value={approved} sub="Applications" color="text-green-600" />
-          <StatCard label="Pending" value={pending} sub="Under review" color="text-amber-600" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <StatCard
+            label="Total Banks"
+            value={loadingBanks ? '—' : banks.length}
+            sub="Active providers"
+          />
+          <StatCard
+            label="Active Banks"
+            value={loadingBanks ? '—' : banks.filter(b => b.isActive).length}
+            sub="Available to clients"
+            color="text-green-600"
+          />
         </div>
 
         <Tabs defaultValue="banks" className="space-y-6">
@@ -155,12 +167,18 @@ export function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="banks">
-            <BankManagementTab
-              banks={banks}
-              onAdd={openAddDialog}
-              onEdit={openEditDialog}
-              onDelete={handleDeleteBank}
-            />
+            {loadingBanks ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            ) : (
+              <BankManagementTab
+                banks={banks}
+                onAdd={openAddDialog}
+                onEdit={openEditDialog}
+                onDelete={handleDeleteBank}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="applications">
@@ -176,6 +194,7 @@ export function AdminDashboard() {
         formData={formData}
         onFormChange={setFormData}
         onSave={handleSaveBank}
+        saving={saving}
       />
     </div>
   );

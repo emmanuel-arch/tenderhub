@@ -1,30 +1,51 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { 
-  ArrowLeft, 
-  Download, 
-  FileText, 
+import {
+  ArrowLeft,
+  Download,
+  FileText,
   Building2,
   Calendar,
   DollarSign,
   CheckCircle,
   Clock,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { mockApplications } from '../data/mockData';
+import { applicationsApi, ApplicationDto } from '../services/api';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
 
 export function ApplicationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const application = mockApplications.find(a => a.id === id);
+  const { logout } = useAuth();
+  const [application, setApplication] = useState<ApplicationDto | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    applicationsApi.getById(id)
+      .then(setApplication)
+      .catch(err => toast.error('Failed to load application', { description: err.message }))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   if (!application) {
     return (
@@ -83,9 +104,11 @@ export function ApplicationDetails() {
   };
 
   const handleDownload = () => {
-    toast.success('Download started', {
-      description: 'Your bid bond document is being downloaded.',
-    });
+    if (application.documentUrl) {
+      window.open(application.documentUrl, '_blank');
+    } else {
+      toast.info('Document not available yet.');
+    }
   };
 
   return (
@@ -93,11 +116,17 @@ export function ApplicationDetails() {
       <Toaster />
       
       <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-2">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-2">Application Details</h1>
@@ -158,15 +187,15 @@ export function ApplicationDetails() {
                     <Calendar className="w-5 h-5 text-slate-400 mt-0.5" />
                     <div>
                       <div className="text-sm text-slate-500 mb-1">Submitted On</div>
-                      <div className="font-medium">{formatDate(application.submittedDate)}</div>
+                      <div className="font-medium">{formatDate(application.submittedAt)}</div>
                     </div>
                   </div>
-                  {application.approvalDate && (
+                  {application.approvedAt && (
                     <div className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
                       <div>
                         <div className="text-sm text-slate-500 mb-1">Approved On</div>
-                        <div className="font-medium">{formatDate(application.approvalDate)}</div>
+                        <div className="font-medium">{formatDate(application.approvedAt)}</div>
                       </div>
                     </div>
                   )}
@@ -228,7 +257,7 @@ export function ApplicationDetails() {
                       <div className="flex-1 pb-8">
                         <div className="flex items-center justify-between mb-1">
                           <div className="font-semibold">{update.status}</div>
-                          <div className="text-sm text-slate-500">{formatDate(update.date)}</div>
+                          <div className="text-sm text-slate-500">{formatDate(update.changedAt)}</div>
                         </div>
                         <div className="text-sm text-slate-600">{update.notes}</div>
                       </div>

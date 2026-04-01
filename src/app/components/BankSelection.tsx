@@ -1,56 +1,102 @@
-import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, Clock, DollarSign, CheckCircle, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router';
+import { ArrowLeft, Clock, DollarSign, CheckCircle, Star, Loader2, LogOut, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { tenders, banks } from '../data/mockData';
+import { banksApi, BankDto } from '../services/api';
+import { Tender } from '../data/mockData';
+import { fetchTenderById } from '../services/tenderService';
 import { ImageWithFallback } from './ImageWithFallback';
+import { toast } from 'sonner';
+import { Toaster } from './ui/sonner';
 
 export function BankSelection() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const tender = tenders.find(t => t.id === id);
+  const location = useLocation();
+  const { user, logout, isAdmin } = useAuth();
+
+  const [banks, setBanks] = useState<BankDto[]>([]);
+  const [tender, setTender] = useState<Tender | null>(
+    (location.state as any)?.tender ?? null
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [banksData, tenderData] = await Promise.all([
+          banksApi.list(),
+          tender ? Promise.resolve(tender) : fetchTenderById(id!),
+        ]);
+        setBanks(banksData.filter(b => b.isActive));
+        if (tenderData) setTender(tenderData);
+      } catch (err: any) {
+        toast.error('Failed to load data', { description: err.message });
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   if (!tender) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>Tender Not Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/')}>Back to Tenders</Button>
-          </CardContent>
+          <CardHeader><CardTitle>Tender Not Found</CardTitle></CardHeader>
+          <CardContent><Button onClick={() => navigate('/')}>Back to Tenders</Button></CardContent>
         </Card>
       </div>
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(amount);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+      <Toaster />
+
       <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Button variant="ghost" onClick={() => navigate(`/tender/${id}`)} className="mb-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate(`/tender/${id}`)}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Tender Details
           </Button>
+          {user && (
+            <div className="flex items-center gap-2">
+              {isAdmin ? (
+                <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  My Dashboard
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tender Summary */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Select a Bank for Your Bid Bond</CardTitle>
@@ -67,19 +113,24 @@ export function BankSelection() {
               </div>
               <div>
                 <div className="text-sm text-slate-500 mb-1">Bond Amount Required</div>
-                <div className="text-xl font-bold text-slate-900">
-                  {formatCurrency(tender.bidBondAmount)}
-                </div>
+                <div className="text-xl font-bold text-slate-900">{formatCurrency(tender.bidBondAmount)}</div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Banks Grid */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Available Banks</h2>
           <p className="text-slate-600">Compare and select the best option for your bid bond application</p>
         </div>
+
+        {banks.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center text-slate-500">
+              No banks are currently available. Please contact admin.
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {banks.map(bank => (
@@ -107,11 +158,7 @@ export function BankSelection() {
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-4 h-4 ${
-                        i < Math.floor(bank.rating)
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-slate-300'
-                      }`}
+                      className={`w-4 h-4 ${i < Math.floor(bank.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
                     />
                   ))}
                   <span className="text-sm text-slate-600 ml-1">({bank.rating})</span>
@@ -125,9 +172,7 @@ export function BankSelection() {
                   </div>
                   <div className="font-medium">{bank.processingTime}</div>
                 </div>
-
                 <Separator />
-
                 <div>
                   <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
                     <DollarSign className="w-4 h-4" />
@@ -135,10 +180,11 @@ export function BankSelection() {
                   </div>
                   <div className="font-medium text-sm">{bank.fees}</div>
                 </div>
-
-                <Button 
+                <Button
                   className="w-full mt-4"
-                  onClick={() => navigate(`/tender/${id}/bid-bond/${bank.id}`)}
+                  onClick={() =>
+                    navigate(`/tender/${id}/bid-bond/${bank.id}`, { state: { tender, bank } })
+                  }
                 >
                   Select {bank.name}
                 </Button>
@@ -147,15 +193,11 @@ export function BankSelection() {
           ))}
         </div>
 
-        {/* Help Section */}
         <Card className="mt-8 border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="text-blue-900">Need Help Choosing?</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-blue-800 mb-4">
-              Consider these factors when selecting a bank:
-            </p>
             <ul className="space-y-2 text-blue-800">
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />

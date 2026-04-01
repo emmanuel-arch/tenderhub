@@ -1,11 +1,11 @@
 import { Edit, Trash2, Clock, DollarSign, Star, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Bank } from '../../data/mockData';
+import { BankDto } from '../../services/api';
 
 interface Props {
-  bank: Bank;
-  onEdit: (bank: Bank) => void;
+  bank: BankDto;
+  onEdit: (bank: BankDto) => void;
   onDelete: (id: string) => void;
 }
 
@@ -15,7 +15,10 @@ export function BankListItem({ bank, onEdit, onDelete }: Props) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4 flex-1">
           <div className="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0">
-            <img src={bank.logo} alt={`${bank.name} logo`} className="w-full h-full object-cover" />
+            {bank.logo
+              ? <img src={bank.logo} alt={`${bank.name} logo`} className="w-full h-full object-cover" />
+              : <span className="text-xl font-bold text-slate-400">{bank.name[0]}</span>
+            }
           </div>
 
           <div className="flex-1 min-w-0">
@@ -26,6 +29,9 @@ export function BankListItem({ bank, onEdit, onDelete }: Props) {
                   <CheckCircle className="w-3 h-3 mr-1" />
                   Digital
                 </Badge>
+              )}
+              {!bank.isActive && (
+                <Badge variant="outline" className="text-slate-500">Inactive</Badge>
               )}
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
