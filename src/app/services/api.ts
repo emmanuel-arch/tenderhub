@@ -238,3 +238,57 @@ export interface PagedResult<T> {
   pageSize: number;
   totalCount: number;
 }
+
+// ── Scraped Tenders ───────────────────────────────────────────────────────────
+
+export interface ScrapedTenderDto {
+  id: string;
+  source: string;
+  externalId?: string;
+  title: string;
+  tenderNumber?: string;
+  procuringEntity?: string;
+  deadline?: string;
+  category: string;
+  subCategory?: string;
+  summary?: string;
+  description?: string;
+  documentUrl?: string;
+  tenderNoticeUrl?: string;
+  bidBondRequired: boolean;
+  bidBondAmount: number;
+  documentReleaseDate?: string;
+  procurementMethod?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+}
+
+export interface ScrapedTenderListParams {
+  page?: number;
+  pageSize?: number;
+  source?: string;
+  search?: string;
+  category?: string;
+  subCategory?: string;
+  procurementMethod?: string;
+}
+
+export const scrapedTendersApi = {
+  list: (params?: ScrapedTenderListParams) => {
+    const qs = new URLSearchParams();
+    if (params?.page)              qs.set('page', params.page.toString());
+    if (params?.pageSize)          qs.set('pageSize', params.pageSize.toString());
+    if (params?.source)            qs.set('source', params.source);
+    if (params?.search)            qs.set('search', params.search);
+    if (params?.category)          qs.set('category', params.category);
+    if (params?.subCategory)       qs.set('subCategory', params.subCategory);
+    if (params?.procurementMethod) qs.set('procurementMethod', params.procurementMethod);
+    const query = qs.toString() ? `?${qs}` : '';
+    return request<PagedResult<ScrapedTenderDto>>(`/api/scraped-tenders${query}`);
+  },
+  getById: (id: string) =>
+    request<ScrapedTenderDto>(`/api/scraped-tenders/${id}`),
+  getSources: () =>
+    request<string[]>('/api/scraped-tenders/sources'),
+};

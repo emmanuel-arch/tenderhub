@@ -17,6 +17,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         connectionString,
         ServerVersion.AutoDetect(connectionString)));
 
+var scrapedConnectionString = builder.Configuration.GetConnectionString("ScrapedConnection")
+    ?? throw new InvalidOperationException("ScrapedConnection is required.");
+
+builder.Services.AddDbContext<ScrapedDbContext>(options =>
+    options.UseSqlServer(scrapedConnectionString));
+
 // ── Authentication / JWT ──────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret is required.");
