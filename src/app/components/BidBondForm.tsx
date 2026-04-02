@@ -3,12 +3,13 @@ import { useParams, useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Upload, FileText, Building2, DollarSign } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { CompanyInfoStep } from './bidbond/CompanyInfoStep';
 import { FinancialDetailsStep } from './bidbond/FinancialDetailsStep';
-import { DocumentUploadStep } from './bidbond/DocumentUploadStep';
+import { DocumentUploadStep, type DocumentFiles } from './bidbond/DocumentUploadStep';
 import { ReviewStep } from './bidbond/ReviewStep';
-import { tendersApi, applicationsApi, BankDto } from '../services/api';
+import { tendersApi, applicationsApi, documentsApi, BankDto } from '../services/api';
 import { Tender } from '../data/mockData';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -24,32 +25,46 @@ const INITIAL_FORM = {
   companyName: '', registrationNumber: '', contactPerson: '',
   email: '', phone: '', address: '',
   annualRevenue: '', netWorth: '', bankAccount: '',
-  taxCertificate: null, registrationCertificate: null,
-  financialStatements: null, additionalDocuments: null,
+};
+
+const INITIAL_FILES: DocumentFiles = {
+  taxCertificate: null,
+  registrationCertificate: null,
+  financialStatements: null,
+  additionalDocuments: null,
 };
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="grid grid-cols-4 gap-4 mt-6">
-      {STEPS.map(step => {
+    <div className="grid grid-cols-4 gap-2 mt-6">
+      {STEPS.map((step, idx) => {
         const Icon = step.icon;
         const isActive    = currentStep === step.number;
         const isCompleted = currentStep > step.number;
         return (
-          <div
-            key={step.number}
-            className={`flex flex-col items-center text-center ${
-              isActive ? 'text-slate-900' : isCompleted ? 'text-green-600' : 'text-slate-400'
-            }`}
-          >
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-              isActive    ? 'bg-slate-900 text-white' :
-              isCompleted ? 'bg-green-100 text-green-600' :
-                            'bg-slate-100 text-slate-400'
-            }`}>
-              {isCompleted ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+          <div key={step.number} className="flex flex-col items-center">
+            <div className="flex items-center w-full">
+              {idx > 0 && (
+                <div className={`h-0.5 flex-1 ${
+                  isCompleted || isActive ? 'bg-blue-500' : 'bg-slate-200'
+                }`} />
+              )}
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+                isActive    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200 ring-4 ring-blue-100' :
+                isCompleted ? 'bg-green-500 text-white shadow-md' :
+                              'bg-slate-100 text-slate-400'
+              }`}>
+                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+              </div>
+              {idx < STEPS.length - 1 && (
+                <div className={`h-0.5 flex-1 ${
+                  isCompleted ? 'bg-green-500' : 'bg-slate-200'
+                }`} />
+              )}
             </div>
-            <div className="text-xs font-medium">{step.title}</div>
+            <div className={`text-xs font-medium mt-2 ${
+              isActive ? 'text-blue-700' : isCompleted ? 'text-green-600' : 'text-slate-400'
+            }`}>{step.title}</div>
           </div>
         );
       })}
@@ -68,12 +83,13 @@ export function BidBondForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM);
+  const [files, setFiles] = useState<DocumentFiles>(INITIAL_FILES);
   const [submitting, setSubmitting] = useState(false);
 
   if (!tender || !bank) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card className="max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <Card className="max-w-md shadow-lg border-0">
           <CardHeader><CardTitle>Invalid Request</CardTitle></CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">Tender or bank information is missing. Please start from the bank selection page.</p>
@@ -86,6 +102,9 @@ export function BidBondForm() {
 
   const handleChange = (field: string, value: string) =>
     setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handleFileChange = (field: keyof DocumentFiles, file: File) =>
+    setFiles(prev => ({ ...prev, [field]: file }));
 
   const tryParseAmount = (fees: string): number => {
     const parts = fees.split('+').map(p => p.trim());
@@ -106,6 +125,12 @@ export function BidBondForm() {
       return;
     }
 
+    if (!files.taxCertificate || !files.registrationCertificate || !files.financialStatements) {
+      toast.error('Missing documents', { description: 'Please upload all required documents.' });
+      setCurrentStep(3);
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Find or create the tender in our backend by external ID
@@ -119,23 +144,24 @@ export function BidBondForm() {
         const created = await tendersApi.create({
           externalId: tender.id,
           title: tender.title,
-          tenderNumber: tender.tenderNumber,
-          procuringEntity: tender.procuringEntity,
+          tenderNumber: tender.tenderNumber || tender.id,
+          procuringEntity: tender.procuringEntity || '',
           deadline: new Date(tender.deadline).toISOString(),
-          industry: tender.industry,
+          industry: tender.industry || '',
           bidBondRequired: tender.bidBondRequired,
           bidBondAmount: tender.bidBondAmount,
           category: tender.category === 'government' ? 'Government' : 'Private',
           subCategory: tender.subCategory ?? 'Goods',
-          summary: tender.summary,
-          description: tender.description,
+          summary: tender.summary || '',
+          description: tender.description || '',
           documentUrl: tender.documentUrl ?? '',
           requiredDocuments: tender.requiredDocuments ?? [],
         });
         backendTenderId = created.id;
       }
 
-      await applicationsApi.create({
+      // Create the application
+      const application = await applicationsApi.create({
         tenderId: backendTenderId,
         bankId: bankId!,
         companyName: formData.companyName,
@@ -148,6 +174,20 @@ export function BidBondForm() {
         companyNetWorth: formData.netWorth ? parseFloat(formData.netWorth) : undefined,
         bankAccountNumber: formData.bankAccount || undefined,
       });
+
+      // Upload documents
+      const docUploads: { name: string; file: File }[] = [
+        { name: 'Tax Compliance Certificate', file: files.taxCertificate },
+        { name: 'Business Registration Certificate', file: files.registrationCertificate },
+        { name: 'Audited Financial Statements', file: files.financialStatements },
+      ];
+      if (files.additionalDocuments) {
+        docUploads.push({ name: 'Additional Documents', file: files.additionalDocuments });
+      }
+
+      for (const doc of docUploads) {
+        await documentsApi.upload(application.id, doc.file, doc.name);
+      }
 
       toast.success('Application submitted!');
       navigate('/dashboard', { state: { applicationSubmitted: true } });
@@ -172,7 +212,7 @@ export function BidBondForm() {
           onChange={handleChange}
         />
       );
-      case 3: return <DocumentUploadStep />;
+      case 3: return <DocumentUploadStep files={files} onFileChange={handleFileChange} />;
       case 4: return (
         <ReviewStep
           formData={formData}
@@ -181,6 +221,7 @@ export function BidBondForm() {
           bondAmount={tender.bidBondAmount}
           processingFee={tryParseAmount(bank.fees)}
           processingTime={bank.processingTime}
+          files={files}
         />
       );
       default: return null;
@@ -188,13 +229,13 @@ export function BidBondForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Toaster />
 
-      <header className="bg-white border-b">
+      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <Button variant="ghost" onClick={() => navigate(`/tender/${id}/banks`)} className="mb-2">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Button variant="ghost" onClick={() => navigate(`/tender/${id}/banks`, { state: { tender } })} className="gap-2 hover:bg-slate-100">
+            <ArrowLeft className="w-4 h-4" />
             Back to Bank Selection
           </Button>
         </div>
@@ -203,33 +244,53 @@ export function BidBondForm() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">Bid Bond Application</h1>
-            <span className="text-sm text-slate-600">Step {currentStep} of {STEPS.length}</span>
+            <h1 className="text-2xl font-bold text-slate-900">Bid Bond Application</h1>
+            <Badge variant="outline" className="text-sm font-medium bg-blue-50 text-blue-700 border-blue-200">
+              Step {currentStep} of {STEPS.length}
+            </Badge>
           </div>
           <Progress value={(currentStep / STEPS.length) * 100} className="h-2" />
           <StepIndicator currentStep={currentStep} />
         </div>
 
-        <Card>
+        <Card className="shadow-md border-0 overflow-hidden">
+          <div className="h-1 bg-gradient-to-r from-blue-600 to-purple-600" />
           <CardHeader>
-            <CardTitle>{STEPS[currentStep - 1].title}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="w-5 h-5 text-blue-600" />; })()}
+              {STEPS[currentStep - 1].title}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {renderStep()}
 
             <div className="flex justify-between mt-8 pt-6 border-t">
-              <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 1 || submitting}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
+              <Button
+                variant="outline"
+                onClick={() => setCurrentStep(s => s - 1)}
+                disabled={currentStep === 1 || submitting}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
                 Previous
               </Button>
               {currentStep < STEPS.length ? (
-                <Button onClick={() => setCurrentStep(s => s + 1)} disabled={submitting}>
+                <Button
+                  onClick={() => setCurrentStep(s => s + 1)}
+                  disabled={submitting}
+                  className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                >
                   Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button size="lg" onClick={handleSubmit} disabled={submitting}>
-                  <Check className="w-4 h-4 mr-2" />
+                <Button
+                  size="lg"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
+                >
+                  <Check className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Application'}
                 </Button>
               )}

@@ -13,9 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("DefaultConnection is required.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        connectionString,
-        ServerVersion.AutoDetect(connectionString)));
+    options.UseSqlServer(connectionString));
 
 var scrapedConnectionString = builder.Configuration.GetConnectionString("ScrapedConnection")
     ?? throw new InvalidOperationException("ScrapedConnection is required.");
@@ -139,7 +137,7 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    dbContext.Database.EnsureCreated();
 
     // Seed a default admin user if none exists
     if (!dbContext.Users.Any(u => u.Role == TenderHub.API.Models.UserRole.Admin))

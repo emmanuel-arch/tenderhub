@@ -87,6 +87,34 @@ export const applicationsApi = {
     }),
 };
 
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+export const documentsApi = {
+  upload: async (applicationId: string, file: File, documentName: string): Promise<DocumentDto> => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentName', documentName);
+
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`${BASE_URL}/api/applications/${applicationId}/documents`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      const message = body.message ?? `Document upload failed: ${res.status}`;
+      throw new Error(message);
+    }
+
+    return res.json();
+  },
+};
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface LoginResponse {

@@ -1,4 +1,5 @@
-import { Calendar, Building2, Clock, ExternalLink, Download, FileText, Tag } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Calendar, Building2, Clock, ExternalLink, Download, FileText, Tag, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function ScrapedTenderCard({ tender }: Props) {
+  const navigate = useNavigate();
   const daysRemaining = getDaysRemaining(tender.deadline);
   const isExpired = daysRemaining !== null && daysRemaining < 0;
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
@@ -110,15 +112,24 @@ export function ScrapedTenderCard({ tender }: Props) {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2 pt-2 border-t">
+          <Button
+            size="sm"
+            variant="default"
+            className="gap-1.5"
+            onClick={() => navigate(`/tender/s-${tender.id}`, { state: { scrapedTender: tender } })}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            View Details
+          </Button>
           {tender.tenderNoticeUrl && (
             <Button
               size="sm"
-              variant="default"
+              variant="outline"
               className="gap-1.5"
               onClick={() => window.open(tender.tenderNoticeUrl!, '_blank', 'noopener,noreferrer')}
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              View Tender Notice
+              Tender Notice
             </Button>
           )}
           {tender.documentUrl && (
@@ -131,9 +142,6 @@ export function ScrapedTenderCard({ tender }: Props) {
               <Download className="w-3.5 h-3.5" />
               Download Document
             </Button>
-          )}
-          {!tender.tenderNoticeUrl && !tender.documentUrl && (
-            <span className="text-xs text-slate-400 italic">No documents available</span>
           )}
         </div>
       </CardContent>
