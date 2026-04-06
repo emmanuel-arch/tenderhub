@@ -9,6 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Login } from './components/Login';
 import { ApplicationDetails } from './components/ApplicationDetails';
+import { HomePage } from './components/HomePage';
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -33,7 +34,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<TenderList />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/tenders" element={<TenderList />} />
           <Route path="/login" element={<Login />} />
           <Route path="/tender/:id" element={<TenderDetails />}     />
           <Route path="/tender/:id/banks" element={<PrivateRoute><BankSelection /></PrivateRoute>} />

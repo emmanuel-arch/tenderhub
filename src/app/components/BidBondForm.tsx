@@ -50,7 +50,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
                 }`} />
               )}
               <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-                isActive    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200 ring-4 ring-blue-100' :
+                isActive    ? 'bg-gradient-to-br from-blue-900 to-blue-900 text-white shadow-lg shadow-blue-200 ring-4 ring-blue-100' :
                 isCompleted ? 'bg-green-500 text-white shadow-md' :
                               'bg-slate-100 text-slate-400'
               }`}>
@@ -63,7 +63,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               )}
             </div>
             <div className={`text-xs font-medium mt-2 ${
-              isActive ? 'text-blue-700' : isCompleted ? 'text-green-600' : 'text-slate-400'
+              isActive ? 'text-blue-900' : isCompleted ? 'text-green-600' : 'text-slate-400'
             }`}>{step.title}</div>
           </div>
         );
@@ -245,7 +245,7 @@ export function BidBondForm() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-slate-900">Bid Bond Application</h1>
-            <Badge variant="outline" className="text-sm font-medium bg-blue-50 text-blue-700 border-blue-200">
+            <Badge variant="outline" className="text-sm font-medium bg-blue-50 text-blue-900 border-blue-200">
               Step {currentStep} of {STEPS.length}
             </Badge>
           </div>
@@ -254,10 +254,10 @@ export function BidBondForm() {
         </div>
 
         <Card className="shadow-md border-0 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-blue-600 to-purple-600" />
+          <div className="h-1 bg-gradient-to-r from-blue-900 to-indigo-600" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="w-5 h-5 text-blue-600" />; })()}
+              {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="w-5 h-5 text-blue-900" />; })()}
               {STEPS[currentStep - 1].title}
             </CardTitle>
           </CardHeader>
@@ -278,7 +278,7 @@ export function BidBondForm() {
                 <Button
                   onClick={() => setCurrentStep(s => s + 1)}
                   disabled={submitting}
-                  className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                  className="gap-2 bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900"
                 >
                   Next
                   <ArrowRight className="w-4 h-4" />

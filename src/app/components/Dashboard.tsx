@@ -79,7 +79,7 @@ export function Dashboard() {
       case 'rejected':
         return <XCircle className="w-5 h-5 text-red-600" />;
       default:
-        return <FileText className="w-5 h-5 text-blue-600" />;
+        return <FileText className="w-5 h-5 text-blue-900" />;
     }
   };
 
@@ -92,7 +92,7 @@ export function Dashboard() {
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-900 border-blue-200';
     }
   };
 
@@ -129,13 +129,13 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <Button variant="ghost" onClick={() => navigate('/')} className="mb-2">
+              <Button variant="ghost" onClick={() => navigate('/tenders')} className="mb-2">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Tenders
               </Button>
               <h1 className="text-2xl font-bold">My Dashboard</h1>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+            <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
@@ -196,7 +196,7 @@ export function Dashboard() {
           <TabsContent value="applications" className="space-y-4">
             {loadingApps && (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
               </div>
             )}
 
@@ -253,7 +253,7 @@ export function Dashboard() {
                   <p className="text-slate-600 mb-4">
                     You haven't submitted any bid bond applications yet.
                   </p>
-                  <Button onClick={() => navigate('/')}>Browse Tenders</Button>
+                  <Button onClick={() => navigate('/tenders')}>Browse Tenders</Button>
                 </CardContent>
               </Card>
             )}
@@ -271,7 +271,7 @@ export function Dashboard() {
                     }`}>
                       <Bell className={`w-5 h-5 ${
                         notification.type === 'success' ? 'text-green-600' :
-                        notification.type === 'warning' ? 'text-amber-600' : 'text-blue-600'
+                        notification.type === 'warning' ? 'text-amber-600' : 'text-blue-900'
                       }`} />
                     </div>
                     <div className="flex-1">

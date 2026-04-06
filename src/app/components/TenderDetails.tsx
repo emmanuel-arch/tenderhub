@@ -102,7 +102,7 @@ export function TenderDetails() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-10 h-10 animate-spin text-blue-900 mx-auto" />
           <p className="text-slate-500 mt-3">Loading tender details...</p>
         </div>
       </div>
@@ -118,7 +118,7 @@ export function TenderDetails() {
           </CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">The tender you're looking for doesn't exist or may have been removed.</p>
-            <Button onClick={() => navigate('/')}>
+            <Button onClick={() => navigate('/tenders')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Tenders
             </Button>
@@ -151,7 +151,7 @@ export function TenderDetails() {
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 hover:bg-slate-100">
+          <Button variant="ghost" onClick={() => navigate('/tenders')} className="gap-2 hover:bg-slate-100">
             <ArrowLeft className="w-4 h-4" />
             Back to Tenders
           </Button>
@@ -168,7 +168,7 @@ export function TenderDetails() {
                   My Dashboard
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+              <Button variant="ghost" size="sm" onClick={logout}>
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
@@ -183,7 +183,7 @@ export function TenderDetails() {
           <div className="lg:col-span-2 space-y-6">
             {/* Title Card */}
             <Card className="shadow-md border-0 overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-blue-600 to-purple-600" />
+              <div className="h-2 bg-gradient-to-r from-blue-900 to-indigo-600" />
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <CardTitle className="text-xl leading-snug">{tender.title}</CardTitle>
@@ -195,10 +195,10 @@ export function TenderDetails() {
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{tender.industry}</Badge>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-900 border-blue-200">{tender.industry}</Badge>
                   <Badge variant="outline" className="capitalize bg-slate-50">{tender.subCategory}</Badge>
                   {procurementMethod && (
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">{procurementMethod}</Badge>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-900 border-blue-200">{procurementMethod}</Badge>
                   )}
                   {tender.bidBondRequired && (
                     <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
@@ -213,7 +213,7 @@ export function TenderDetails() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-blue-600" />
+                      <FileText className="w-5 h-5 text-blue-900" />
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase tracking-wide">Tender Number</div>
@@ -246,8 +246,8 @@ export function TenderDetails() {
                     </div>
                   </div>
                   <div className="sm:col-span-2 flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                      <Building2 className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5 text-blue-900" />
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase tracking-wide">Procuring Entity</div>
@@ -305,7 +305,7 @@ export function TenderDetails() {
               <Card className="shadow-md border-0">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
+                    <FileText className="w-5 h-5 text-blue-900" />
                     Required Documents
                   </CardTitle>
                   <p className="text-sm text-slate-600 mt-1">
@@ -379,12 +379,12 @@ export function TenderDetails() {
                     <Separator />
                     <div className="bg-blue-50 rounded-lg p-3">
                       <div className="text-sm font-medium text-blue-900 mb-1">What is a Bid Bond?</div>
-                      <p className="text-sm text-blue-700">
+                      <p className="text-sm text-blue-900">
                         A bid bond is a guarantee that ensures bidders will honor their commitments if awarded the contract.
                       </p>
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
+                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
                       size="lg"
                       onClick={() => navigate(`/tender/${tender.id}/banks?bondAmount=${tender.bidBondAmount}`, { state: { tender } })}
                     >
@@ -414,7 +414,7 @@ export function TenderDetails() {
                       />
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900"
                       size="lg"
                       disabled={!manualBondAmount || Number(manualBondAmount) <= 0}
                       onClick={() =>
@@ -437,7 +437,7 @@ export function TenderDetails() {
                   <CardTitle className="text-base">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200">
+                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-blue-50 hover:text-blue-900 hover:border-blue-200">
                     <Bookmark className="w-4 h-4" />
                     Save for Later
                   </Button>

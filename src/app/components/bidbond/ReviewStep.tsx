@@ -41,7 +41,7 @@ export function ReviewStep({ formData, tenderTitle, bankName, bondAmount, proces
       {/* Application Summary */}
       <div className="rounded-xl border bg-gradient-to-br from-slate-50 to-white p-6 space-y-1">
         <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-blue-600" />
+          <CheckCircle className="w-5 h-5 text-blue-900" />
           Application Summary
         </h3>
         <SummaryRow label="Tender" value={tenderTitle} />

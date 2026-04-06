@@ -4,18 +4,21 @@ using TenderHub.API.Data;
 using TenderHub.API.DTOs.Common;
 using TenderHub.API.DTOs.ScrapedTenders;
 using TenderHub.API.Models;
+using TenderHub.API.Services;
 
 namespace TenderHub.API.Controllers;
 
 [ApiController]
 [Route("api/scraped-tenders")]
-public class ScrapedTendersController(ScrapedDbContext db) : ControllerBase
+public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncService syncService) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<ScrapedTenderDto>), 200)]
     public async Task<IActionResult> GetAll([FromQuery] ScrapedTenderListParams p)
     {
-        var query = db.ScrapedTenders.AsNoTracking().AsQueryable();
+        var query = db.ScrapedTenders.AsNoTracking()
+            .Where(t => t.Deadline == null || t.Deadline >= DateTime.UtcNow)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(p.Source))
             query = query.Where(t => t.Source == p.Source);
@@ -72,6 +75,14 @@ public class ScrapedTendersController(ScrapedDbContext db) : ControllerBase
             .OrderBy(s => s)
             .ToListAsync();
         return Ok(sources);
+    }
+
+    [HttpPost("sync")]
+    [ProducesResponseType(200)]
+    public async Task<IActionResult> Sync(CancellationToken ct)
+    {
+        var (inserted, updated) = await syncService.SyncAsync(ct);
+        return Ok(new { inserted, updated });
     }
 
     private static ScrapedTenderDto ToDto(ScrapedTender t) => new()
