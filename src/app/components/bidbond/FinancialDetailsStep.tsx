@@ -27,13 +27,13 @@ export function FinancialDetailsStep({
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center shrink-0">
-            <DollarSign className="w-5 h-5 text-blue-700" />
+            <DollarSign className="w-5 h-5 text-blue-900" />
           </div>
           <div>
             <div className="font-medium text-blue-900 text-sm">Bond Amount (Auto-calculated)</div>
             <div className="text-2xl font-bold text-blue-900 mt-1">{formatCurrency(bondAmount)}</div>
-            <div className="text-sm text-blue-700 mt-1">Processing fee: {formatCurrency(processingFee)}</div>
-            <div className="text-xs text-blue-600 mt-1 font-medium">Total: {formatCurrency(bondAmount + processingFee)}</div>
+            <div className="text-sm text-blue-900 mt-1">Processing fee: {formatCurrency(processingFee)}</div>
+            <div className="text-xs text-blue-900 mt-1 font-medium">Total: {formatCurrency(bondAmount + processingFee)}</div>
           </div>
         </div>
       </div>

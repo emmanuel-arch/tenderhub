@@ -112,7 +112,6 @@ export function AdminDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
   };
 
   return (
@@ -124,7 +123,7 @@ export function AdminDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Shield className="w-6 h-6 text-blue-800" />
+                <Shield className="w-6 h-6 text-blue-900" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">Admin Control Panel</h1>
@@ -169,7 +168,7 @@ export function AdminDashboard() {
           <TabsContent value="banks">
             {loadingBanks ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
               </div>
             ) : (
               <BankManagementTab

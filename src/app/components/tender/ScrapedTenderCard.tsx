@@ -5,6 +5,10 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import type { ScrapedTenderDto } from '../../services/api';
 
+function toAbsoluteUrl(url: string) {
+  return url.startsWith('http') ? url : `https://tenders.go.ke${url}`;
+}
+
 function getDaysRemaining(deadline?: string) {
   if (!deadline) return null;
   const diff = new Date(deadline).getTime() - Date.now();
@@ -22,8 +26,8 @@ function formatDate(dateStr?: string) {
 
 const sourceColors: Record<string, string> = {
   AFA: 'bg-green-100 text-green-800 border-green-300',
-  KRA: 'bg-blue-100 text-blue-800 border-blue-300',
-  eGP: 'bg-purple-100 text-purple-800 border-purple-300',
+  KRA: 'bg-blue-100 text-blue-900 border-blue-300',
+  eGP: 'bg-blue-100 text-blue-900 border-blue-300',
 };
 
 interface Props {
@@ -37,7 +41,7 @@ export function ScrapedTenderCard({ tender }: Props) {
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500">
+    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-900">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -126,7 +130,7 @@ export function ScrapedTenderCard({ tender }: Props) {
               size="sm"
               variant="outline"
               className="gap-1.5"
-              onClick={() => window.open(tender.tenderNoticeUrl!, '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(toAbsoluteUrl(tender.tenderNoticeUrl!), '_blank', 'noopener,noreferrer')}
             >
               <ExternalLink className="w-3.5 h-3.5" />
               Tender Notice
@@ -137,7 +141,7 @@ export function ScrapedTenderCard({ tender }: Props) {
               size="sm"
               variant="outline"
               className="gap-1.5"
-              onClick={() => window.open(tender.documentUrl!, '_blank', 'noopener,noreferrer')}
+              onClick={() => window.open(toAbsoluteUrl(tender.documentUrl!), '_blank', 'noopener,noreferrer')}
             >
               <Download className="w-3.5 h-3.5" />
               Download Document

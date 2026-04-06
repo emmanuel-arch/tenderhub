@@ -42,7 +42,7 @@ export function ApplicationDetails() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ export function ApplicationDetails() {
     } else if (lowerStatus.includes('review') || lowerStatus.includes('pending')) {
       return <Clock className="w-5 h-5 text-amber-600" />;
     } else {
-      return <FileText className="w-5 h-5 text-blue-600" />;
+      return <FileText className="w-5 h-5 text-blue-900" />;
     }
   };
 
@@ -97,7 +97,7 @@ export function ApplicationDetails() {
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'submitted':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-900 border-blue-200';
       default:
         return '';
     }
@@ -122,7 +122,7 @@ export function ApplicationDetails() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+            <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
@@ -331,7 +331,7 @@ export function ApplicationDetails() {
               <CardHeader>
                 <CardTitle className="text-blue-900">Need Help?</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm text-blue-800">
+              <CardContent className="space-y-2 text-sm text-blue-900">
                 <p>
                   <strong>For approved applications:</strong> Download and submit the bid bond with your tender documents.
                 </p>

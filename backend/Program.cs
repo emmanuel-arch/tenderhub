@@ -58,6 +58,15 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileService, LocalFileService>();
 
+// ── tenders.go.ke Sync ────────────────────────────────────────────────────────
+builder.Services.AddHttpClient("TendersGoKe", client =>
+{
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromMinutes(2);
+});
+builder.Services.AddScoped<TendersGoKeSyncService>();
+builder.Services.AddHostedService<TendersGoKeBackgroundService>();
+
 // ── Controllers & Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

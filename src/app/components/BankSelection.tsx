@@ -85,7 +85,7 @@ export function BankSelection() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="w-10 h-10 animate-spin text-blue-900 mx-auto" />
           <p className="text-slate-500 mt-3">Loading banks...</p>
         </div>
       </div>
@@ -99,7 +99,7 @@ export function BankSelection() {
           <CardHeader><CardTitle>Tender Not Found</CardTitle></CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">Could not find the tender details.</p>
-            <Button onClick={() => navigate('/')}>Back to Tenders</Button>
+            <Button onClick={() => navigate('/tenders')}>Back to Tenders</Button>
           </CardContent>
         </Card>
       </div>
@@ -132,7 +132,7 @@ export function BankSelection() {
                   My Dashboard
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => { logout(); navigate('/login'); }}>
+              <Button variant="ghost" size="sm" onClick={logout}>
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
@@ -143,7 +143,7 @@ export function BankSelection() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tender Summary Card */}
         <Card className="mb-8 shadow-md border-0 overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-blue-600 to-purple-600" />
+          <div className="h-2 bg-gradient-to-r from-blue-900 to-indigo-600" />
           <CardHeader>
             <CardTitle className="text-lg">Select a Bank for Your Bid Bond</CardTitle>
           </CardHeader>
@@ -151,7 +151,7 @@ export function BankSelection() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                  <Shield className="w-5 h-5 text-blue-600" />
+                  <Shield className="w-5 h-5 text-blue-900" />
                 </div>
                 <div>
                   <div className="text-xs text-slate-500 uppercase tracking-wide">Tender</div>
@@ -159,8 +159,8 @@ export function BankSelection() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                  <Shield className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                  <Shield className="w-5 h-5 text-blue-900" />
                 </div>
                 <div>
                   <div className="text-xs text-slate-500 uppercase tracking-wide">Procuring Entity</div>
@@ -200,7 +200,7 @@ export function BankSelection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {banks.map(bank => (
             <Card key={bank.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-16 h-16 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center border">
@@ -249,7 +249,7 @@ export function BankSelection() {
                   </div>
                 </div>
                 <Button
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md"
+                  className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
                   size="lg"
                   onClick={() =>
                     navigate(`/tender/${id}/bid-bond/${bank.id}`, { state: { tender, bank } })
@@ -267,15 +267,15 @@ export function BankSelection() {
           <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-400" />
           <CardHeader className="bg-blue-50/50">
             <CardTitle className="flex items-center gap-2 text-blue-900">
-              <HelpCircle className="w-5 h-5 text-blue-600" />
+              <HelpCircle className="w-5 h-5 text-blue-900" />
               Need Help Choosing?
             </CardTitle>
-            <p className="text-sm text-blue-700">Consider these factors when selecting a bank:</p>
+            <p className="text-sm text-blue-900">Consider these factors when selecting a bank:</p>
           </CardHeader>
           <CardContent className="pt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50/50">
-                <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <Clock className="w-5 h-5 text-blue-900 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-sm text-slate-900">Processing Time</div>
                   <div className="text-sm text-slate-600">Choose a faster option if your deadline is near</div>
