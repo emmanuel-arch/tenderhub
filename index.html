@@ -1,15 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Kenyan Tender Platform Wireframe</title>
-    </head>
+    <!-- Primary Meta -->
+    <title>TenderHub Kenya | Government & Private Tenders, Bid Bond Applications</title>
+    <meta name="description" content="Find and apply for government and private sector tenders in Kenya. Apply for bid bonds through partner banks and microfinance institutions. Real-time updates from tenders.go.ke." />
+    <meta name="keywords" content="Kenya tenders, government tenders Kenya, bid bond Kenya, procurement Kenya, tenders go ke, PPRA tenders, microfinance bid bond" />
+    <meta name="author" content="TenderHub Kenya" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://tenderhub-kenya.vercel.app" />
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tenderhub-kenya.vercel.app" />
+    <meta property="og:title" content="TenderHub Kenya | Government & Private Tenders" />
+    <meta property="og:description" content="Discover and apply for government and private sector tenders in Kenya. Bid bond applications through partner banks — all in one place." />
+    <meta property="og:image" content="https://tenderhub-kenya.vercel.app/og-image.png" />
+    <meta property="og:locale" content="en_KE" />
+    <meta property="og:site_name" content="TenderHub Kenya" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://tenderhub-kenya.vercel.app" />
+    <meta name="twitter:title" content="TenderHub Kenya | Government & Private Tenders" />
+    <meta name="twitter:description" content="Discover and apply for government and private sector tenders in Kenya. Bid bond applications through partner banks — all in one place." />
+    <meta name="twitter:image" content="https://tenderhub-kenya.vercel.app/og-image.png" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "TenderHub Kenya",
+      "url": "https://tenderhub-kenya.vercel.app",
+      "description": "Government and private sector tender aggregation platform for Kenya",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://tenderhub-kenya.vercel.app/tenders?search={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
