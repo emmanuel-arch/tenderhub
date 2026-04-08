@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { User, LogOut, AlertCircle, Loader2, Search, Filter } from 'lucide-react';
+import { LogOut, AlertCircle, Loader2, Search, Filter } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -111,30 +111,28 @@ export function TenderList() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button onClick={() => navigate('/')} className="text-left hover:opacity-80 transition-opacity">
-              <h1 className="text-2xl font-bold text-slate-900">TenderHub Kenya</h1>
-              <p className="text-sm text-slate-600">Discover government and private sector opportunities</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <button onClick={() => navigate('/')} className="text-left hover:opacity-80 transition-opacity min-w-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">TenderHub Kenya</h1>
+              <p className="text-xs sm:text-sm text-slate-600 hidden sm:block">Discover government and private sector opportunities</p>
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 shrink-0">
               {user ? (
                 <>
-                  <div className="text-sm text-slate-600">
-                    <User className="w-4 h-4 inline mr-1" />
-                    {user.name}
-                  </div>
                   {isAdmin ? (
-                    <Button variant="outline" onClick={() => navigate('/admin')}>Admin Panel</Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>Admin</Button>
                   ) : (
-                    <Button variant="outline" onClick={() => navigate('/dashboard')}>My Dashboard</Button>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>Dashboard</Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={logout}>
+                  <span className="text-sm text-slate-600 hidden sm:block">{user.name}</span>
+                  <Button variant="outline" size="sm" onClick={logout} className="gap-1.5">
                     <LogOut className="w-4 h-4" />
+                    Logout
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => navigate('/login')}>Sign In</Button>
+                <Button size="sm" onClick={() => navigate('/login')}>Sign In</Button>
               )}
             </div>
           </div>
@@ -144,15 +142,17 @@ export function TenderList() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Tabs */}
         <Tabs value={mainTab} onValueChange={v => { setMainTab(v); if (v === 'api') setShowApiTenders(true); }}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="scraped" className="gap-2">
-              <Filter className="w-4 h-4" />
-              All Tenders ({scrapedTotal.toLocaleString()})
+          <TabsList className="mb-6 w-full grid grid-cols-3">
+            <TabsTrigger value="scraped" className="gap-1.5 text-xs sm:text-sm">
+              <Filter className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline truncate">All Tenders ({scrapedTotal.toLocaleString()})</span>
+              <span className="sm:hidden">All</span>
             </TabsTrigger>
-            <TabsTrigger value="api" className="gap-2">
-              Government Portal
+            <TabsTrigger value="api" className="text-xs sm:text-sm">
+              <span className="hidden sm:inline">Government Portal</span>
+              <span className="sm:hidden">Gov't</span>
             </TabsTrigger>
-            <TabsTrigger value="private" className="gap-2">
+            <TabsTrigger value="private" className="text-xs sm:text-sm">
               Private
             </TabsTrigger>
           </TabsList>
@@ -168,9 +168,9 @@ export function TenderList() {
                   onKeyDown={e => e.key === 'Enter' && handleSearch()}
                   className="flex-1"
                 />
-                <Button onClick={handleSearch} variant="default" className="gap-1.5">
+                <Button onClick={handleSearch} variant="default" className="gap-1.5 shrink-0">
                   <Search className="w-4 h-4" />
-                  Search
+                  <span className="hidden sm:inline">Search</span>
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">

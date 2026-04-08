@@ -35,7 +35,7 @@ export function ScrapedTenderCard({ tender }: Props) {
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-900">
+    <Card className="hover:shadow-lg transition-all duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -106,11 +106,11 @@ export function ScrapedTenderCard({ tender }: Props) {
         )}
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 border-t">
           <Button
             size="sm"
             variant="default"
-            className="gap-1.5"
+            className="gap-1.5 w-full sm:w-auto"
             onClick={() => navigate(`/tender/s-${tender.id}`, { state: { scrapedTender: tender } })}
           >
             <Eye className="w-3.5 h-3.5" />

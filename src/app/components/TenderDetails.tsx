@@ -183,7 +183,6 @@ export function TenderDetails() {
           <div className="lg:col-span-2 space-y-6">
             {/* Title Card */}
             <Card className="shadow-md border-0 overflow-hidden">
-              <div className="h-2 bg-gradient-to-r from-blue-900 to-indigo-600" />
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <CardTitle className="text-xl leading-snug">{tender.title}</CardTitle>
@@ -384,7 +383,7 @@ export function TenderDetails() {
                       </p>
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
+                      className="w-full bg-blue-900 hover:bg-blue-800 shadow-md"
                       size="lg"
                       onClick={() => navigate(`/tender/${tender.id}/banks?bondAmount=${tender.bidBondAmount}`, { state: { tender } })}
                     >
@@ -394,7 +393,6 @@ export function TenderDetails() {
                 </Card>
               ) : (
                 <Card className="shadow-lg border-0 overflow-hidden">
-                  <div className="h-2 bg-gradient-to-r from-slate-400 to-slate-500" />
                   <CardHeader>
                     <CardTitle>No Bid Bond Specified</CardTitle>
                   </CardHeader>
@@ -414,7 +412,7 @@ export function TenderDetails() {
                       />
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900"
+                      className="w-full bg-blue-900 hover:bg-blue-800"
                       size="lg"
                       disabled={!manualBondAmount || Number(manualBondAmount) <= 0}
                       onClick={() =>

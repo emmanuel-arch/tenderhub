@@ -164,7 +164,6 @@ export function BankSelection() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tender Summary Card */}
         <Card className="mb-8 shadow-md border-0 overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-blue-900 to-indigo-600" />
           <CardHeader>
             <CardTitle className="text-lg">Select a Provider for Your Bid Bond</CardTitle>
           </CardHeader>
@@ -239,14 +238,13 @@ export function BankSelection() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {MICROFINANCE_INSTITUTIONS.map(mfi => (
               <Card key={mfi.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100">
-                      <Building2 className="w-6 h-6 text-emerald-700" />
+                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
+                      <Building2 className="w-6 h-6 text-green-700" />
                     </div>
                     {mfi.digitalOption && (
-                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                      <Badge className="bg-green-100 text-green-800 border-green-200">
                         <Zap className="w-3 h-3 mr-1" />
                         Digital
                       </Badge>
@@ -279,7 +277,7 @@ export function BankSelection() {
                     </div>
                   </div>
                   <Button
-                    className="w-full bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-800 hover:to-emerald-900 shadow-md"
+                    className="w-full bg-green-700 hover:bg-green-800 shadow-md"
                     size="lg"
                     onClick={() =>
                       navigate(`/tender/${id}/bid-bond/mfi-${mfi.id}`, { state: { tender, bank: { id: `mfi-${mfi.id}`, name: mfi.name, processingTime: mfi.processingTime, fees: mfi.fees, rating: mfi.rating, digitalOption: mfi.digitalOption, logo: '', isActive: true } } })
@@ -308,7 +306,6 @@ export function BankSelection() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {banks.map(bank => (
                 <Card key={bank.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-                  <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between mb-3">
                       <div className="w-16 h-16 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center border">
@@ -321,7 +318,7 @@ export function BankSelection() {
                         />
                       </div>
                       {bank.digitalOption && (
-                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
                           <Zap className="w-3 h-3 mr-1" />
                           Digital
                         </Badge>
@@ -354,7 +351,7 @@ export function BankSelection() {
                       </div>
                     </div>
                     <Button
-                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
+                      className="w-full bg-blue-900 hover:bg-blue-800 shadow-md"
                       size="lg"
                       onClick={() =>
                         navigate(`/tender/${id}/bid-bond/${bank.id}`, { state: { tender, bank } })
@@ -371,7 +368,6 @@ export function BankSelection() {
 
         {/* Help Card */}
         <Card className="mt-8 shadow-md border-0 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-400" />
           <CardHeader className="bg-blue-50/50">
             <CardTitle className="flex items-center gap-2 text-blue-900">
               <HelpCircle className="w-5 h-5 text-blue-900" />
@@ -395,8 +391,8 @@ export function BankSelection() {
                   <div className="text-sm text-slate-600">Compare total costs including percentage fees</div>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-emerald-50/50">
-                <Zap className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">
+                <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-sm text-slate-900">Digital Option</div>
                   <div className="text-sm text-slate-600">Apply online without visiting a branch</div>

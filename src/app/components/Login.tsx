@@ -132,13 +132,13 @@ export function Login() {
 
             {/* Headline */}
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-sm px-3 py-1.5 rounded-full border border-emerald-200">
+              <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200">
                 <TrendingUp className="w-3.5 h-3.5" />
                 615+ Active Tenders Available
               </div>
               <h2 className="text-4xl font-bold text-slate-900 leading-tight">
                 Win More Tenders,<br />
-                <span className="text-emerald-500">Faster Than Ever</span>
+                <span className="text-green-500">Faster Than Ever</span>
               </h2>
               <p className="text-slate-500 text-base leading-relaxed">
                 TenderHub aggregates government and private sector tenders in one place — so you spend less time searching and more time winning.
@@ -162,7 +162,7 @@ export function Login() {
                 },
                 {
                   icon: CheckCircle,
-                  color: 'bg-emerald-50 text-emerald-600',
+                  color: 'bg-green-50 text-green-600',
                   title: 'Never Miss a Deadline',
                   desc: 'Active tenders are refreshed every 6 hours. Expired tenders are automatically removed from your feed.',
                 },
@@ -220,8 +220,6 @@ export function Login() {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-blue-900 to-indigo-600" />
-
               <div className="p-8">
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-slate-900">Sign in to your account</h3>

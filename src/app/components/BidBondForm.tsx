@@ -279,7 +279,6 @@ export function BidBondForm() {
         </div>
 
         <Card className="shadow-md border-0 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-blue-900 to-indigo-600" />
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {(() => { const Icon = STEPS[currentStep - 1].icon; return <Icon className="w-5 h-5 text-blue-900" />; })()}
