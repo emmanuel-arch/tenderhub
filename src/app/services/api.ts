@@ -4,6 +4,13 @@ export function getToken(): string | null {
   return localStorage.getItem('auth_token');
 }
 
+export class ApiError extends Error {
+  constructor(message: string, public readonly errors?: Record<string, string[]>) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -16,11 +23,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    const errors = body.errors && typeof body.errors === 'object'
+      ? body.errors as Record<string, string[]>
+      : undefined;
     const message = body.message
       ?? body.title
-      ?? (body.errors ? Object.values(body.errors).flat().join('; ') : null)
+      ?? (errors ? Object.values(errors).flat().join('; ') : null)
       ?? `Request failed: ${res.status}`;
-    throw new Error(message);
+    throw new ApiError(message, errors);
   }
 
   if (res.status === 204) return undefined as T;
@@ -78,6 +88,8 @@ export const applicationsApi = {
     request<PagedResult<ApplicationDto>>(`/api/applications?page=${page}`),
   getById: (id: string) =>
     request<ApplicationDto>(`/api/applications/${id}`),
+  validateStep: (step: 1 | 2, data: Record<string, unknown>) =>
+    request<void>(`/api/applications/validate/step${step}`, { method: 'POST', body: JSON.stringify(data) }),
   create: (data: CreateApplicationDto) =>
     request<ApplicationDto>('/api/applications', { method: 'POST', body: JSON.stringify(data) }),
   updateStatus: (id: string, data: UpdateStatusDto) =>

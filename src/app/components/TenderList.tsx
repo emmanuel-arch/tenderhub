@@ -36,11 +36,9 @@ export function TenderList() {
   const [scrapedPage, setScrapedPage] = useState(1);
   const [scrapedTotalPages, setScrapedTotalPages] = useState(1);
   const [scrapedTotal, setScrapedTotal] = useState(0);
-  const [sourceFilter, setSourceFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [sources, setSources] = useState<string[]>([]);
 
   // ── API tenders state (SECONDARY) ──
   const [apiTenders, setApiTenders] = useState<Tender[]>([]);
@@ -54,10 +52,6 @@ export function TenderList() {
   // ── Main tab ──
   const [mainTab, setMainTab] = useState('scraped');
 
-  // Load sources on mount
-  useEffect(() => {
-    scrapedTendersApi.getSources().then(setSources).catch(() => {});
-  }, []);
 
   // Load scraped tenders
   const loadScraped = useCallback(async () => {
@@ -65,7 +59,6 @@ export function TenderList() {
     setScrapedError(null);
     try {
       const params: Record<string, any> = { page: scrapedPage, pageSize: 20 };
-      if (sourceFilter !== 'all') params.source = sourceFilter;
       if (categoryFilter !== 'all') params.subCategory = categoryFilter;
       if (searchQuery) params.search = searchQuery;
       const result: PagedResult<ScrapedTenderDto> = await scrapedTendersApi.list(params);
@@ -73,11 +66,11 @@ export function TenderList() {
       setScrapedTotalPages(Math.ceil(result.totalCount / result.pageSize));
       setScrapedTotal(result.totalCount);
     } catch {
-      setScrapedError('Failed to load scraped tenders. Make sure the backend is running.');
+      setScrapedError('Error loading tenders. Please try again later.');
     } finally {
       setScrapedLoading(false);
     }
-  }, [scrapedPage, sourceFilter, categoryFilter, searchQuery]);
+  }, [scrapedPage, categoryFilter, searchQuery]);
 
   useEffect(() => { loadScraped(); }, [loadScraped]);
 
@@ -184,20 +177,6 @@ export function TenderList() {
                   </Button>
                 </div>
                 <Select
-                  value={sourceFilter}
-                  onValueChange={v => { setSourceFilter(v); setScrapedPage(1); }}
-                >
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="All Sources" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    {sources.map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
                   value={categoryFilter}
                   onValueChange={v => { setCategoryFilter(v); setScrapedPage(1); }}
                 >
@@ -209,7 +188,6 @@ export function TenderList() {
                     <SelectItem value="Goods">Goods</SelectItem>
                     <SelectItem value="Works">Works</SelectItem>
                     <SelectItem value="Services">Services</SelectItem>
-                    <SelectItem value="Non Consultancy Services">Non Consultancy</SelectItem>
                     <SelectItem value="Consultancy Services">Consultancy</SelectItem>
                   </SelectContent>
                 </Select>
@@ -238,7 +216,6 @@ export function TenderList() {
             {!scrapedLoading && !scrapedError && (
               <div className="mb-4 text-sm text-slate-500">
                 Showing {scrapedTenders.length} of {scrapedTotal.toLocaleString()} tenders
-                {sourceFilter !== 'all' && ` from ${sourceFilter}`}
                 {' '}— Page {scrapedPage} of {scrapedTotalPages}
               </div>
             )}

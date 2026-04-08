@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight, Check, Upload, FileText, Building2, DollarSign }
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
 import { CompanyInfoStep } from './bidbond/CompanyInfoStep';
 import { FinancialDetailsStep } from './bidbond/FinancialDetailsStep';
 import { DocumentUploadStep, type DocumentFiles } from './bidbond/DocumentUploadStep';
@@ -13,6 +12,7 @@ import { tendersApi, applicationsApi, documentsApi, BankDto } from '../services/
 import { Tender } from '../data/mockData';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
+import { extractBackendErrors, type BackendErrors } from '../utils/formErrors';
 
 const STEPS = [
   { number: 1, title: 'Company Information', icon: Building2 },
@@ -36,38 +36,43 @@ const INITIAL_FILES: DocumentFiles = {
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="grid grid-cols-4 gap-2 mt-6">
-      {STEPS.map((step, idx) => {
-        const Icon = step.icon;
-        const isActive    = currentStep === step.number;
-        const isCompleted = currentStep > step.number;
-        return (
-          <div key={step.number} className="flex flex-col items-center">
-            <div className="flex items-center w-full">
-              {idx > 0 && (
-                <div className={`h-0.5 flex-1 ${
-                  isCompleted || isActive ? 'bg-blue-500' : 'bg-slate-200'
-                }`} />
-              )}
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-                isActive    ? 'bg-gradient-to-br from-blue-900 to-blue-900 text-white shadow-lg shadow-blue-200 ring-4 ring-blue-100' :
-                isCompleted ? 'bg-green-500 text-white shadow-md' :
+    <div className="mt-6">
+      <div className="flex items-center">
+        {STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isActive    = currentStep === step.number;
+          const isCompleted = currentStep > step.number;
+          return (
+            <div key={step.number} className="flex items-center flex-1 last:flex-none">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+                isActive    ? 'bg-blue-900 text-white ring-4 ring-blue-100 shadow-md' :
+                isCompleted ? 'bg-green-500 text-white' :
                               'bg-slate-100 text-slate-400'
               }`}>
-                {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
               </div>
               {idx < STEPS.length - 1 && (
-                <div className={`h-0.5 flex-1 ${
+                <div className={`h-0.5 flex-1 mx-1 transition-colors duration-300 ${
                   isCompleted ? 'bg-green-500' : 'bg-slate-200'
                 }`} />
               )}
             </div>
-            <div className={`text-xs font-medium mt-2 ${
-              isActive ? 'text-blue-900' : isCompleted ? 'text-green-600' : 'text-slate-400'
-            }`}>{step.title}</div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="flex mt-2">
+        {STEPS.map((step) => {
+          const isActive    = currentStep === step.number;
+          const isCompleted = currentStep > step.number;
+          return (
+            <div key={step.number} className="flex-1 text-center">
+              <span className={`text-xs font-medium ${
+                isActive ? 'text-blue-900' : isCompleted ? 'text-green-600' : 'text-slate-400'
+              }`}>{step.title}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -79,12 +84,13 @@ export function BidBondForm() {
 
   const state = (location.state as any) ?? {};
   const tender: Tender | null = state.tender ?? null;
-  const bank: BankDto | null = state.bank ?? null;
+  const bank: BankDto | null  = state.bank   ?? null;
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState(INITIAL_FORM);
-  const [files, setFiles] = useState<DocumentFiles>(INITIAL_FILES);
-  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData]       = useState(INITIAL_FORM);
+  const [files, setFiles]             = useState<DocumentFiles>(INITIAL_FILES);
+  const [submitting, setSubmitting]   = useState(false);
+  const [errors, setErrors]           = useState<BackendErrors>(null);
 
   if (!tender || !bank) {
     return (
@@ -100,47 +106,54 @@ export function BidBondForm() {
     );
   }
 
-  const handleChange = (field: string, value: string) =>
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const [validating, setValidating] = useState(false);
 
-  const handleFileChange = (field: keyof DocumentFiles, file: File) =>
-    setFiles(prev => ({ ...prev, [field]: file }));
+  const handleChange     = (field: string, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
+  const handleFileChange = (field: keyof DocumentFiles, file: File) => setFiles(prev => ({ ...prev, [field]: file }));
+
+  const handleNext = async () => {
+    // Steps 3 & 4 have no backend validation — advance directly
+    if (currentStep >= 3) { setCurrentStep(s => s + 1); return; }
+
+    setValidating(true);
+    setErrors(null);
+    try {
+      const payload = currentStep === 1
+        ? { companyName: formData.companyName, businessRegistrationNumber: formData.registrationNumber, contactPerson: formData.contactPerson, phoneNumber: formData.phone, contactEmail: formData.email, physicalAddress: formData.address }
+        : { annualRevenue: formData.annualRevenue ? parseFloat(formData.annualRevenue) : null, companyNetWorth: formData.netWorth ? parseFloat(formData.netWorth) : null };
+
+      await applicationsApi.validateStep(currentStep as 1 | 2, payload);
+      // Backend returned 200 — step is valid
+      setCurrentStep(s => s + 1);
+    } catch (err: unknown) {
+      const backendErrors = extractBackendErrors(err);
+      if (backendErrors) setErrors(backendErrors);
+      else toast.error('Validation failed', { description: (err as any)?.message });
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const tryParseAmount = (fees: string): number => {
     const parts = fees.split('+').map(p => p.trim());
-    let base = 0;
-    let pct = 0;
+    let base = 0, pct = 0;
     for (const part of parts) {
       const num = parseFloat(part.replace(/[^0-9.]/g, ''));
-      if (part.includes('%')) pct = num;
-      else base = num;
+      if (part.includes('%')) pct = num; else base = num;
     }
     return base + (tender.bidBondAmount * pct) / 100;
   };
 
   const handleSubmit = async () => {
-    if (!formData.companyName || !formData.registrationNumber || !formData.contactPerson || !formData.email || !formData.phone || !formData.address) {
-      toast.error('Missing required fields', { description: 'Please fill in all company information fields.' });
-      setCurrentStep(1);
-      return;
-    }
-
-    if (!files.taxCertificate || !files.registrationCertificate || !files.financialStatements) {
-      toast.error('Missing documents', { description: 'Please upload all required documents.' });
-      setCurrentStep(3);
-      return;
-    }
-
     setSubmitting(true);
+    setErrors(null);
     try {
-      // Find or create the tender in our backend by external ID
+      // Find or create tender in backend
       const tenderList = await tendersApi.list({ externalId: tender.id });
       let backendTenderId: string;
-
       if (tenderList.data.length > 0) {
         backendTenderId = tenderList.data[0].id;
       } else {
-        // Create the tender in our backend from the external data
         const created = await tendersApi.create({
           externalId: tender.id,
           title: tender.title,
@@ -160,7 +173,7 @@ export function BidBondForm() {
         backendTenderId = created.id;
       }
 
-      // Create the application
+      // POST application — backend validates and returns errors if invalid
       const application = await applicationsApi.create({
         tenderId: backendTenderId,
         bankId: bankId!,
@@ -177,22 +190,34 @@ export function BidBondForm() {
 
       // Upload documents
       const docUploads: { name: string; file: File }[] = [
-        { name: 'Tax Compliance Certificate', file: files.taxCertificate },
-        { name: 'Business Registration Certificate', file: files.registrationCertificate },
-        { name: 'Audited Financial Statements', file: files.financialStatements },
+        { name: 'Tax Compliance Certificate',         file: files.taxCertificate! },
+        { name: 'Business Registration Certificate',  file: files.registrationCertificate! },
+        { name: 'Audited Financial Statements',       file: files.financialStatements! },
       ];
-      if (files.additionalDocuments) {
+      if (files.additionalDocuments)
         docUploads.push({ name: 'Additional Documents', file: files.additionalDocuments });
-      }
 
-      for (const doc of docUploads) {
+      for (const doc of docUploads)
         await documentsApi.upload(application.id, doc.file, doc.name);
-      }
 
-      toast.success('Application submitted!');
+      // Success
+      toast.success('Application submitted successfully!');
       navigate('/dashboard', { state: { applicationSubmitted: true } });
-    } catch (err: any) {
-      toast.error('Submission failed', { description: err.message });
+
+    } catch (err: unknown) {
+      const backendErrors = extractBackendErrors(err);
+      if (backendErrors) {
+        // Backend returned field-level validation errors — show them inline
+        setErrors(backendErrors);
+        // Jump to first step that has errors
+        const step1 = ['CompanyName','BusinessRegistrationNumber','ContactPerson','PhoneNumber','ContactEmail','PhysicalAddress'];
+        const step2 = ['AnnualRevenue','CompanyNetWorth','BankAccountNumber'];
+        if (step1.some(f => backendErrors[f])) setCurrentStep(1);
+        else if (step2.some(f => backendErrors[f])) setCurrentStep(2);
+        toast.error('Please fix the errors highlighted on the form.');
+      } else {
+        toast.error('Submission failed', { description: (err as any)?.message });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -200,7 +225,7 @@ export function BidBondForm() {
 
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <CompanyInfoStep formData={formData} onChange={handleChange} />;
+      case 1: return <CompanyInfoStep formData={formData} onChange={handleChange} errors={errors} />;
       case 2: return (
         <FinancialDetailsStep
           annualRevenue={formData.annualRevenue}
@@ -210,9 +235,10 @@ export function BidBondForm() {
           bondAmount={tender.bidBondAmount}
           processingFee={tryParseAmount(bank.fees)}
           onChange={handleChange}
+          errors={errors}
         />
       );
-      case 3: return <DocumentUploadStep files={files} onFileChange={handleFileChange} />;
+      case 3: return <DocumentUploadStep files={files} onFileChange={handleFileChange} errors={errors} />;
       case 4: return (
         <ReviewStep
           formData={formData}
@@ -236,7 +262,7 @@ export function BidBondForm() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Button variant="ghost" onClick={() => navigate(`/tender/${id}/banks`, { state: { tender } })} className="gap-2 hover:bg-slate-100">
             <ArrowLeft className="w-4 h-4" />
-            Back to Bank Selection
+            Back to Provider Selection
           </Button>
         </div>
       </header>
@@ -249,7 +275,6 @@ export function BidBondForm() {
               Step {currentStep} of {STEPS.length}
             </Badge>
           </div>
-          <Progress value={(currentStep / STEPS.length) * 100} className="h-2" />
           <StepIndicator currentStep={currentStep} />
         </div>
 
@@ -276,11 +301,11 @@ export function BidBondForm() {
               </Button>
               {currentStep < STEPS.length ? (
                 <Button
-                  onClick={() => setCurrentStep(s => s + 1)}
-                  disabled={submitting}
-                  className="gap-2 bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900"
+                  onClick={handleNext}
+                  disabled={submitting || validating}
+                  className="gap-2 bg-blue-900 hover:bg-blue-800"
                 >
-                  Next
+                  {validating ? 'Checking...' : 'Next'}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               ) : (
@@ -288,7 +313,7 @@ export function BidBondForm() {
                   size="lg"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-md"
+                  className="gap-2 bg-green-600 hover:bg-green-700 shadow-md"
                 >
                   <Check className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Application'}

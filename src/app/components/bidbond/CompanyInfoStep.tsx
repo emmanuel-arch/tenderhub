@@ -1,6 +1,7 @@
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { getFieldError, type BackendErrors } from '../../utils/formErrors';
 
 interface FormFields {
   companyName: string;
@@ -14,24 +15,32 @@ interface FormFields {
 interface Props {
   formData: FormFields;
   onChange: (field: string, value: string) => void;
+  errors: BackendErrors;
 }
 
-export function CompanyInfoStep({ formData, onChange }: Props) {
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <p className="text-xs text-red-600 mt-1">{msg}</p>;
+}
+
+function fieldClass(error?: string) {
+  return `h-11${error ? ' border-red-400 focus-visible:ring-red-400' : ''}`;
+}
+
+export function CompanyInfoStep({ formData, onChange, errors }: Props) {
+  const e = (f: string) => getFieldError(errors, f);
   return (
     <div className="space-y-5">
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-700">
-        Fields marked with * are required to proceed with your application.
-      </div>
-
-      <div className="space-y-1.5">
+<div className="space-y-1.5">
         <Label htmlFor="companyName" className="text-sm font-medium">Company Name *</Label>
         <Input
           id="companyName"
           value={formData.companyName}
           onChange={(e) => onChange('companyName', e.target.value)}
           placeholder="Enter your company name"
-          className="h-11"
+          className={fieldClass(e('companyName'))}
         />
+        <FieldError msg={e('companyName')} />
       </div>
 
       <div className="space-y-1.5">
@@ -41,8 +50,9 @@ export function CompanyInfoStep({ formData, onChange }: Props) {
           value={formData.registrationNumber}
           onChange={(e) => onChange('registrationNumber', e.target.value)}
           placeholder="e.g., PVT-1234567890"
-          className="h-11"
+          className={fieldClass(e('registrationNumber'))}
         />
+        <FieldError msg={e('registrationNumber')} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -53,8 +63,9 @@ export function CompanyInfoStep({ formData, onChange }: Props) {
             value={formData.contactPerson}
             onChange={(e) => onChange('contactPerson', e.target.value)}
             placeholder="Full name"
-            className="h-11"
+            className={fieldClass(e('contactPerson'))}
           />
+          <FieldError msg={e('contactPerson')} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
@@ -63,8 +74,9 @@ export function CompanyInfoStep({ formData, onChange }: Props) {
             value={formData.phone}
             onChange={(e) => onChange('phone', e.target.value)}
             placeholder="+254 700 000 000"
-            className="h-11"
+            className={fieldClass(e('phone'))}
           />
+          <FieldError msg={e('phone')} />
         </div>
       </div>
 
@@ -76,8 +88,9 @@ export function CompanyInfoStep({ formData, onChange }: Props) {
           value={formData.email}
           onChange={(e) => onChange('email', e.target.value)}
           placeholder="email@company.com"
-          className="h-11"
+          className={fieldClass(e('email'))}
         />
+        <FieldError msg={e('email')} />
       </div>
 
       <div className="space-y-1.5">
@@ -88,7 +101,9 @@ export function CompanyInfoStep({ formData, onChange }: Props) {
           onChange={(e) => onChange('address', e.target.value)}
           placeholder="Enter your company's physical address"
           rows={3}
+          className={e('address') ? 'border-red-400 focus-visible:ring-red-400' : ''}
         />
+        <FieldError msg={e('address')} />
       </div>
     </div>
   );

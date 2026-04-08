@@ -1,17 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Clock, DollarSign, CheckCircle, Star, Loader2, LogOut, LayoutDashboard, Shield, Zap, BarChart3, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Clock, DollarSign, Star, Loader2, LogOut, LayoutDashboard, Shield, Zap, BarChart3, HelpCircle, Building2, Landmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
-import { banksApi, BankDto, scrapedTendersApi, type ScrapedTenderDto } from '../services/api';
+import { banksApi, BankDto, scrapedTendersApi } from '../services/api';
 import { Tender } from '../data/mockData';
 import { fetchTenderById } from '../services/tenderService';
 import { ImageWithFallback } from './ImageWithFallback';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
+
+interface MfiDto {
+  id: string;
+  name: string;
+  processingTime: string;
+  fees: string;
+  rating: number;
+  digitalOption: boolean;
+}
+
+const MICROFINANCE_INSTITUTIONS: MfiDto[] = [
+  { id: 'faulu', name: 'Faulu Kenya Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.3, digitalOption: true },
+  { id: 'kwft', name: 'Kenya Women Microfinance Bank (KWFT)', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.2, digitalOption: false },
+  { id: 'smep', name: 'SMEP Microfinance Bank', processingTime: '2-3 days', fees: '1.75% of bond value', rating: 4.0, digitalOption: false },
+  { id: 'rafiki', name: 'Rafiki Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.1, digitalOption: true },
+  { id: 'century', name: 'Century Microfinance Bank', processingTime: '2-3 days', fees: '2% of bond value', rating: 3.9, digitalOption: false },
+  { id: 'caritas', name: 'Caritas Microfinance Bank', processingTime: '2-3 days', fees: '1.75% of bond value', rating: 4.0, digitalOption: false },
+  { id: 'sumac', name: 'Sumac Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.1, digitalOption: true },
+  { id: 'uwezo', name: 'Uwezo Microfinance Bank', processingTime: '2-3 days', fees: '2% of bond value', rating: 3.8, digitalOption: false },
+];
 
 export function BankSelection() {
   const { id } = useParams();
@@ -20,6 +40,7 @@ export function BankSelection() {
   const { user, logout, isAdmin } = useAuth();
 
   const [banks, setBanks] = useState<BankDto[]>([]);
+  const [providerType, setProviderType] = useState<'microfinance' | 'banks'>('microfinance');
   const [tender, setTender] = useState<Tender | null>(
     (location.state as any)?.tender ?? null
   );
@@ -86,7 +107,7 @@ export function BankSelection() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 animate-spin text-blue-900 mx-auto" />
-          <p className="text-slate-500 mt-3">Loading banks...</p>
+          <p className="text-slate-500 mt-3">Loading providers...</p>
         </div>
       </div>
     );
@@ -145,7 +166,7 @@ export function BankSelection() {
         <Card className="mb-8 shadow-md border-0 overflow-hidden">
           <div className="h-2 bg-gradient-to-r from-blue-900 to-indigo-600" />
           <CardHeader>
-            <CardTitle className="text-lg">Select a Bank for Your Bid Bond</CardTitle>
+            <CardTitle className="text-lg">Select a Provider for Your Bid Bond</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,87 +201,173 @@ export function BankSelection() {
           </CardContent>
         </Card>
 
-        {/* Section Header */}
+        {/* Provider Type Toggle */}
         <div className="mb-6">
-          <h2 className="text-xl font-bold text-slate-900 mb-1">Available Banks</h2>
-          <p className="text-slate-600">Compare and select the best option for your bid bond application</p>
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              onClick={() => setProviderType('microfinance')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all border ${
+                providerType === 'microfinance'
+                  ? 'bg-blue-900 text-white border-blue-900 shadow-md'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-900'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              Microfinance Institutions
+            </button>
+            <button
+              onClick={() => setProviderType('banks')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm transition-all border ${
+                providerType === 'banks'
+                  ? 'bg-blue-900 text-white border-blue-900 shadow-md'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-900'
+              }`}
+            >
+              <Landmark className="w-4 h-4" />
+              Banks
+            </button>
+          </div>
+          <p className="text-slate-500 text-sm">
+            {providerType === 'microfinance'
+              ? 'Microfinance institutions offer faster processing and flexible terms for bid bonds.'
+              : 'Commercial banks provide bid bonds with established processes and digital options.'}
+          </p>
         </div>
 
-        {banks.length === 0 && (
-          <Card className="shadow-md border-0">
-            <CardContent className="py-16 text-center">
-              <Shield className="w-12 h-12 mx-auto text-slate-400 mb-3" />
-              <p className="text-slate-500 font-medium">No banks are currently available.</p>
-              <p className="text-slate-400 text-sm mt-1">Please contact admin to add banks.</p>
-            </CardContent>
-          </Card>
+        {/* Microfinance Cards */}
+        {providerType === 'microfinance' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {MICROFINANCE_INSTITUTIONS.map(mfi => (
+              <Card key={mfi.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100">
+                      <Building2 className="w-6 h-6 text-emerald-700" />
+                    </div>
+                    {mfi.digitalOption && (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                        <Zap className="w-3 h-3 mr-1" />
+                        Digital
+                      </Badge>
+                    )}
+                  </div>
+                  <CardTitle className="text-base leading-snug">{mfi.name}</CardTitle>
+                  <div className="flex items-center gap-1 mt-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < Math.floor(mfi.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                    ))}
+                    <span className="text-sm text-slate-500 ml-1.5">({mfi.rating})</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-slate-50 rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <Clock className="w-4 h-4" />
+                        Processing Time
+                      </div>
+                      <div className="font-semibold text-sm text-slate-900">{mfi.processingTime}</div>
+                    </div>
+                    <Separator />
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <DollarSign className="w-4 h-4" />
+                        Fees
+                      </div>
+                      <div className="font-semibold text-sm text-slate-900 text-right max-w-[140px]">{mfi.fees}</div>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-800 hover:to-emerald-900 shadow-md"
+                    size="lg"
+                    onClick={() =>
+                      navigate(`/tender/${id}/bid-bond/mfi-${mfi.id}`, { state: { tender, bank: { id: `mfi-${mfi.id}`, name: mfi.name, processingTime: mfi.processingTime, fees: mfi.fees, rating: mfi.rating, digitalOption: mfi.digitalOption, logo: '', isActive: true } } })
+                    }
+                  >
+                    Select {mfi.name.split(' ').slice(0, 2).join(' ')}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
 
-        {/* Bank Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {banks.map(bank => (
-            <Card key={bank.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-16 h-16 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center border">
-                    <ImageWithFallback
-                      src={bank.logo}
-                      alt={`${bank.name} logo`}
-                      className="w-full h-full object-cover"
-                      width={64}
-                      height={64}
-                    />
-                  </div>
-                  {bank.digitalOption && (
-                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm">
-                      <Zap className="w-3 h-3 mr-1" />
-                      Digital
-                    </Badge>
-                  )}
-                </div>
-                <CardTitle className="text-lg">{bank.name}</CardTitle>
-                <div className="flex items-center gap-1 mt-1">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${i < Math.floor(bank.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`}
-                    />
-                  ))}
-                  <span className="text-sm text-slate-500 ml-1.5 font-medium">({bank.rating})</span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-slate-50 rounded-lg p-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <Clock className="w-4 h-4" />
-                      Processing Time
+        {/* Bank Cards */}
+        {providerType === 'banks' && (
+          <>
+            {banks.length === 0 && (
+              <Card className="shadow-md border-0">
+                <CardContent className="py-16 text-center">
+                  <Shield className="w-12 h-12 mx-auto text-slate-400 mb-3" />
+                  <p className="text-slate-500 font-medium">No banks are currently available.</p>
+                  <p className="text-slate-400 text-sm mt-1">Please contact admin to add banks.</p>
+                </CardContent>
+              </Card>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {banks.map(bank => (
+                <Card key={bank.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-16 h-16 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center border">
+                        <ImageWithFallback
+                          src={bank.logo}
+                          alt={`${bank.name} logo`}
+                          className="w-full h-full object-cover"
+                          width={64}
+                          height={64}
+                        />
+                      </div>
+                      {bank.digitalOption && (
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                          <Zap className="w-3 h-3 mr-1" />
+                          Digital
+                        </Badge>
+                      )}
                     </div>
-                    <div className="font-semibold text-sm text-slate-900">{bank.processingTime}</div>
-                  </div>
-                  <Separator />
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <DollarSign className="w-4 h-4" />
-                      Processing Fees
+                    <CardTitle className="text-lg">{bank.name}</CardTitle>
+                    <div className="flex items-center gap-1 mt-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(bank.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                      ))}
+                      <span className="text-sm text-slate-500 ml-1.5 font-medium">({bank.rating})</span>
                     </div>
-                    <div className="font-semibold text-sm text-slate-900 text-right max-w-[140px]">{bank.fees}</div>
-                  </div>
-                </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
-                  size="lg"
-                  onClick={() =>
-                    navigate(`/tender/${id}/bid-bond/${bank.id}`, { state: { tender, bank } })
-                  }
-                >
-                  Select {bank.name}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-slate-50 rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <Clock className="w-4 h-4" />
+                          Processing Time
+                        </div>
+                        <div className="font-semibold text-sm text-slate-900">{bank.processingTime}</div>
+                      </div>
+                      <Separator />
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <DollarSign className="w-4 h-4" />
+                          Processing Fees
+                        </div>
+                        <div className="font-semibold text-sm text-slate-900 text-right max-w-[140px]">{bank.fees}</div>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-gradient-to-r from-blue-900 to-blue-900 hover:from-blue-900 hover:to-blue-900 shadow-md"
+                      size="lg"
+                      onClick={() =>
+                        navigate(`/tender/${id}/bid-bond/${bank.id}`, { state: { tender, bank } })
+                      }
+                    >
+                      Select {bank.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Help Card */}
         <Card className="mt-8 shadow-md border-0 overflow-hidden">

@@ -72,6 +72,18 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
         return Ok(ToDto(app));
     }
 
+    /// <summary>Validate step-1 fields without saving anything.</summary>
+    [HttpPost("validate/step1")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public IActionResult ValidateStep1([FromBody] ValidateStep1Dto dto) => Ok();
+
+    /// <summary>Validate step-2 fields without saving anything.</summary>
+    [HttpPost("validate/step2")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public IActionResult ValidateStep2([FromBody] ValidateStep2Dto dto) => Ok();
+
     /// <summary>Submit a new bid bond application.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApplicationDto), 201)]
