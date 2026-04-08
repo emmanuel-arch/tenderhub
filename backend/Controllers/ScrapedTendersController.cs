@@ -33,7 +33,12 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
             query = query.Where(t => t.Category == p.Category);
 
         if (!string.IsNullOrWhiteSpace(p.SubCategory))
-            query = query.Where(t => t.SubCategory == p.SubCategory);
+        {
+            if (p.SubCategory == "Services")
+                query = query.Where(t => t.SubCategory == "Services" || t.SubCategory == "Non Consultancy Services");
+            else
+                query = query.Where(t => t.SubCategory == p.SubCategory);
+        }
 
         if (!string.IsNullOrWhiteSpace(p.ProcurementMethod))
             query = query.Where(t => t.ProcurementMethod == p.ProcurementMethod);

@@ -24,12 +24,6 @@ function formatDate(dateStr?: string) {
   });
 }
 
-const sourceColors: Record<string, string> = {
-  AFA: 'bg-green-100 text-green-800 border-green-300',
-  KRA: 'bg-blue-100 text-blue-900 border-blue-300',
-  eGP: 'bg-blue-100 text-blue-900 border-blue-300',
-};
-
 interface Props {
   tender: ScrapedTenderDto;
 }
@@ -55,9 +49,6 @@ export function ScrapedTenderCard({ tender }: Props) {
               </div>
             )}
           </div>
-          <Badge className={sourceColors[tender.source] ?? 'bg-gray-100 text-gray-800'} variant="outline">
-            {tender.source}
-          </Badge>
         </div>
       </CardHeader>
 

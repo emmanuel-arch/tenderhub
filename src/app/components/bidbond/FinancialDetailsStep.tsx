@@ -2,6 +2,7 @@ import { DollarSign } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { formatCurrency } from '../../utils/formatters';
+import { getFieldError, type BackendErrors } from '../../utils/formErrors';
 
 interface Props {
   annualRevenue: string;
@@ -11,6 +12,16 @@ interface Props {
   bondAmount: number;
   processingFee: number;
   onChange: (field: string, value: string) => void;
+  errors: BackendErrors;
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return <p className="text-xs text-red-600 mt-1">{msg}</p>;
+}
+
+function fieldClass(error?: string) {
+  return `h-11${error ? ' border-red-400 focus-visible:ring-red-400' : ''}`;
 }
 
 export function FinancialDetailsStep({
@@ -21,7 +32,9 @@ export function FinancialDetailsStep({
   bondAmount,
   processingFee,
   onChange,
+  errors,
 }: Props) {
+  const e = (f: string) => getFieldError(errors, f);
   return (
     <div className="space-y-5">
       <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5">
@@ -45,8 +58,9 @@ export function FinancialDetailsStep({
           value={annualRevenue}
           onChange={(e) => onChange('annualRevenue', e.target.value)}
           placeholder="Enter amount in KES"
-          className="h-11"
+          className={fieldClass(e('annualRevenue'))}
         />
+        <FieldError msg={e('annualRevenue')} />
       </div>
 
       <div className="space-y-1.5">
@@ -56,19 +70,21 @@ export function FinancialDetailsStep({
           value={netWorth}
           onChange={(e) => onChange('netWorth', e.target.value)}
           placeholder="Enter amount in KES"
-          className="h-11"
+          className={fieldClass(e('netWorth'))}
         />
+        <FieldError msg={e('netWorth')} />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="bankAccount" className="text-sm font-medium">Bank Account Number (with {bankName}) *</Label>
+        <Label htmlFor="bankAccount" className="text-sm font-medium">Bank Account Number (with {bankName})</Label>
         <Input
           id="bankAccount"
           value={bankAccount}
           onChange={(e) => onChange('bankAccount', e.target.value)}
           placeholder="Enter your account number"
-          className="h-11"
+          className={fieldClass(e('bankAccount'))}
         />
+        <FieldError msg={e('bankAccount')} />
         <p className="text-sm text-slate-500">
           If you don't have an account, one will be opened during processing
         </p>

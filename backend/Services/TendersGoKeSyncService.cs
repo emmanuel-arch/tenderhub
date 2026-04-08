@@ -26,29 +26,54 @@ public class TendersGoKeSyncService(
         var client = httpClientFactory.CreateClient("TendersGoKe");
         int inserted = 0, updated = 0, page = 1, lastPage = 1;
 
-        // Load all existing ExternalIds for this source once — avoids per-record DB lookups
-        var existingByExternalId = await db.ScrapedTenders
+        // Load all existing records for this source once — avoids per-record DB lookups
+        var allExisting = await db.ScrapedTenders
             .Where(s => s.Source == Source)
-            .ToDictionaryAsync(s => s.ExternalId ?? "", s => s, ct);
+            .ToListAsync(ct);
+        var existingByExternalId = allExisting
+            .Where(s => !string.IsNullOrEmpty(s.ExternalId))
+            .GroupBy(s => s.ExternalId!)
+            .ToDictionary(g => g.Key, g => g.First());
+        var existingByTitle = allExisting
+            .Where(s => !string.IsNullOrEmpty(s.Title))
+            .GroupBy(s => s.Title!)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         do
         {
             var url = $"{BaseUrl}?perpage=50&order=asc&page={page}";
             logger.LogInformation("Fetching {Url}", url);
 
-            TendersGoKeResponse? response;
-            try
+            TendersGoKeResponse? response = null;
+            for (int attempt = 1; attempt <= 5; attempt++)
             {
-                var json = await client.GetStringAsync(url, ct);
-                response = JsonSerializer.Deserialize<TendersGoKeResponse>(json, JsonOptions);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to fetch page {Page} from tenders.go.ke", page);
-                break;
+                try
+                {
+                    var httpResponse = await client.GetAsync(url, ct);
+                    if (httpResponse.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    {
+                        var retryAfter = httpResponse.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(attempt * 10);
+                        logger.LogWarning("Rate limited on page {Page}, waiting {Seconds}s (attempt {Attempt})", page, retryAfter.TotalSeconds, attempt);
+                        await Task.Delay(retryAfter, ct);
+                        continue;
+                    }
+                    httpResponse.EnsureSuccessStatusCode();
+                    var json = await httpResponse.Content.ReadAsStringAsync(ct);
+                    response = JsonSerializer.Deserialize<TendersGoKeResponse>(json, JsonOptions);
+                    break;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to fetch page {Page} from tenders.go.ke (attempt {Attempt})", page, attempt);
+                    if (attempt == 5) goto nextPage;
+                    await Task.Delay(TimeSpan.FromSeconds(attempt * 5), ct);
+                }
             }
 
             if (response?.Data is null or { Count: 0 }) break;
+            // polite delay between pages to avoid rate limiting
+            if (page > 1) await Task.Delay(TimeSpan.FromSeconds(2), ct);
 
             lastPage = response.LastPage;
             var now = DateTime.UtcNow;
@@ -62,14 +87,21 @@ public class TendersGoKeSyncService(
                 var bidBondRequired = (t.BidSecurityValue ?? 0) > 0 || (t.BidSecurityPercent ?? 0) > 0;
                 var noticeDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderNoticeDocTypeId)
                              ?? t.Documents.FirstOrDefault();
-                var documentUrl = noticeDoc?.Url is { } u ? BaseWebUrl + u : null;
+                var documentUrl = noticeDoc?.Url is { } u
+                    ? (u.StartsWith("http") ? u : BaseWebUrl + u)
+                    : null;
                 var tenderNoticeUrl = documentUrl;
 
                 // Skip expired tenders entirely
                 if (closeAt.HasValue && closeAt.Value < now) continue;
 
-                if (existingByExternalId.TryGetValue(externalId, out var existing))
+                // Deduplicate by ExternalId first, then fall back to title to avoid unique constraint violation
+                if (!existingByExternalId.TryGetValue(externalId, out var existing))
+                    existingByTitle.TryGetValue(t.Title ?? "", out existing);
+
+                if (existing is not null)
                 {
+                    existing.ExternalId = externalId; // keep ExternalId in sync
                     existing.Title = t.Title;
                     existing.TenderNumber = t.TenderRef;
                     existing.ProcuringEntity = t.Pe?.Name;
@@ -112,6 +144,8 @@ public class TendersGoKeSyncService(
                     };
                     db.ScrapedTenders.Add(record);
                     existingByExternalId[externalId] = record;
+                    if (!string.IsNullOrEmpty(record.Title))
+                        existingByTitle[record.Title] = record;
                     inserted++;
                 }
             }
@@ -119,6 +153,7 @@ public class TendersGoKeSyncService(
             // Save once per page instead of once per record
             await db.SaveChangesAsync(ct);
             logger.LogInformation("Page {Page}/{Last} done", page, lastPage);
+            nextPage:
             page++;
         } while (page <= lastPage);
 

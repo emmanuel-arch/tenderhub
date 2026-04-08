@@ -122,9 +122,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
-
 app.UseCors();
+
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 // Serve uploaded files at /files/**
 var uploadsPath = Path.Combine(app.Environment.ContentRootPath,
