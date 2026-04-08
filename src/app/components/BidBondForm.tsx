@@ -67,7 +67,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
           return (
             <div key={step.number} className="flex-1 text-center">
               <span className={`text-xs font-medium ${
-                isActive ? 'text-blue-900' : isCompleted ? 'text-green-600' : 'text-slate-400'
+                isActive ? 'text-blue-900' : isCompleted ? 'text-green-800' : 'text-slate-400'
               }`}>{step.title}</span>
             </div>
           );
@@ -312,7 +312,7 @@ export function BidBondForm() {
                   size="lg"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="gap-2 bg-green-600 hover:bg-green-700 shadow-md"
+                  className="gap-2 bg-green-800 hover:bg-green-900 shadow-md"
                 >
                   <Check className="w-4 h-4" />
                   {submitting ? 'Submitting...' : 'Submit Application'}

@@ -188,8 +188,8 @@ export function BankSelection() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                  <DollarSign className="w-5 h-5 text-amber-600" />
+                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-5 h-5 text-green-700" />
                 </div>
                 <div>
                   <div className="text-xs text-slate-500 uppercase tracking-wide">Bond Amount Required</div>
@@ -241,10 +241,10 @@ export function BankSelection() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
-                      <Building2 className="w-6 h-6 text-green-700" />
+                      <Building2 className="w-6 h-6 text-green-900" />
                     </div>
                     {mfi.digitalOption && (
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
+                      <Badge className="bg-green-100 text-green-950 border-green-200">
                         <Zap className="w-3 h-3 mr-1" />
                         Digital
                       </Badge>
@@ -277,7 +277,7 @@ export function BankSelection() {
                     </div>
                   </div>
                   <Button
-                    className="w-full bg-green-700 hover:bg-green-800 shadow-md"
+                    className="w-full bg-green-900 hover:bg-green-950 shadow-md"
                     size="lg"
                     onClick={() =>
                       navigate(`/tender/${id}/bid-bond/mfi-${mfi.id}`, { state: { tender, bank: { id: `mfi-${mfi.id}`, name: mfi.name, processingTime: mfi.processingTime, fees: mfi.fees, rating: mfi.rating, digitalOption: mfi.digitalOption, logo: '', isActive: true } } })
@@ -318,7 +318,7 @@ export function BankSelection() {
                         />
                       </div>
                       {bank.digitalOption && (
-                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                        <Badge className="bg-green-100 text-green-950 border-green-200">
                           <Zap className="w-3 h-3 mr-1" />
                           Digital
                         </Badge>
@@ -385,21 +385,21 @@ export function BankSelection() {
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">
-                <DollarSign className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <DollarSign className="w-5 h-5 text-green-800 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-sm text-slate-900">Fees</div>
                   <div className="text-sm text-slate-600">Compare total costs including percentage fees</div>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">
-                <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                <Zap className="w-5 h-5 text-green-800 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-sm text-slate-900">Digital Option</div>
                   <div className="text-sm text-slate-600">Apply online without visiting a branch</div>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50/50">
-                <BarChart3 className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">
+                <BarChart3 className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-medium text-sm text-slate-900">Rating</div>
                   <div className="text-sm text-slate-600">Check customer satisfaction ratings</div>

@@ -155,7 +155,7 @@ export function AdminDashboard() {
             label="Active Banks"
             value={loadingBanks ? '—' : banks.filter(b => b.isActive).length}
             sub="Available to clients"
-            color="text-green-600"
+            color="text-green-800"
           />
         </div>
 

@@ -200,7 +200,7 @@ export function TenderDetails() {
                     <Badge variant="outline" className="bg-blue-50 text-blue-900 border-blue-200">{procurementMethod}</Badge>
                   )}
                   {tender.bidBondRequired && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                    <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                       <AlertCircle className="w-3 h-3 mr-1" />
                       Bid Bond Required
                     </Badge>
@@ -228,7 +228,7 @@ export function TenderDetails() {
                       <Calendar className={`w-5 h-5 ${
                         daysRemaining !== null && daysRemaining <= 7
                           ? 'text-red-600'
-                          : 'text-green-600'
+                          : 'text-green-800'
                       }`} />
                     </div>
                     <div>
@@ -315,7 +315,7 @@ export function TenderDetails() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {tender.requiredDocuments.map((doc, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-100">
-                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                        <CheckCircle className="w-5 h-5 text-green-800 flex-shrink-0" />
                         <span className="text-sm font-medium text-slate-700">{doc}</span>
                       </div>
                     ))}
@@ -328,7 +328,7 @@ export function TenderDetails() {
             <Card className="shadow-md border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-green-800" />
                   Requirements & Eligibility
                 </CardTitle>
               </CardHeader>
@@ -343,7 +343,7 @@ export function TenderDetails() {
                   ].map((req, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-green-800" />
                       </div>
                       <span className="text-slate-600">{req}</span>
                     </li>
@@ -359,10 +359,10 @@ export function TenderDetails() {
               {/* Bid Bond Card */}
               {tender.bidBondRequired ? (
                 <Card className="shadow-lg border-0 overflow-hidden">
-                  <div className="h-2 bg-gradient-to-r from-amber-500 to-orange-500" />
-                  <CardHeader className="bg-amber-50">
-                    <CardTitle className="flex items-center gap-2 text-amber-900">
-                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                  <div className="h-2 bg-gradient-to-r from-green-800 to-green-900" />
+                  <CardHeader className="bg-green-50">
+                    <CardTitle className="flex items-center gap-2 text-green-950">
+                      <AlertCircle className="w-5 h-5 text-green-700" />
                       Bid Bond Required
                     </CardTitle>
                   </CardHeader>
@@ -439,7 +439,7 @@ export function TenderDetails() {
                     <Bookmark className="w-4 h-4" />
                     Save for Later
                   </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200">
+                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-green-50 hover:text-green-800 hover:border-green-200">
                     <Bell className="w-4 h-4" />
                     Set Reminder
                   </Button>

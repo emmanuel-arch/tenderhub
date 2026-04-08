@@ -54,7 +54,7 @@ export function TenderCard({ tender }: Props) {
               {tender.subCategory}
             </Badge>
             {tender.bidBondRequired && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                 <AlertCircle className="w-3 h-3 mr-1" />
                 Bid Bond Required
               </Badge>

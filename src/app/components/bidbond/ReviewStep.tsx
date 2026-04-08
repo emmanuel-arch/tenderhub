@@ -80,18 +80,18 @@ export function ReviewStep({ formData, tenderTitle, bankName, bondAmount, proces
             <div key={label} className={`flex items-center justify-between p-3 rounded-lg border ${
               file
                 ? 'bg-green-50 border-green-100'
-                : 'bg-amber-50 border-amber-100'
+                : 'bg-green-50 border-green-100'
             }`}>
               <div className="flex items-center gap-2">
-                {file ? <FileText className="w-4 h-4 text-green-600" /> : null}
+                {file ? <FileText className="w-4 h-4 text-green-800" /> : null}
                 <span className="text-sm text-slate-700 font-medium">{label}</span>
               </div>
               {file ? (
-                <span className="text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full">
+                <span className="text-xs text-green-800 font-medium bg-green-100 px-2 py-1 rounded-full">
                   {file.name}
                 </span>
               ) : (
-                <span className="text-xs text-amber-600 font-medium bg-amber-100 px-2 py-1 rounded-full">
+                <span className="text-xs text-green-700 font-medium bg-green-100 px-2 py-1 rounded-full">
                   Not uploaded
                 </span>
               )}
@@ -101,9 +101,9 @@ export function ReviewStep({ formData, tenderTitle, bankName, bondAmount, proces
       </div>
 
       {/* Terms & Conditions */}
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-        <h3 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-amber-600" />
+      <div className="rounded-xl border border-green-200 bg-green-50 p-6">
+        <h3 className="font-semibold text-green-950 mb-3 flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-green-700" />
           Terms & Conditions
         </h3>
         <ul className="space-y-2">
@@ -113,8 +113,8 @@ export function ReviewStep({ formData, tenderTitle, bankName, bondAmount, proces
             'I agree to pay the processing fees as stated',
             'I accept the bank\'s terms and conditions for bid bond issuance',
           ].map((term, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-amber-800">
-              <CheckCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <li key={i} className="flex items-start gap-2 text-sm text-green-900">
+              <CheckCircle className="w-4 h-4 text-green-700 mt-0.5 flex-shrink-0" />
               {term}
             </li>
           ))}

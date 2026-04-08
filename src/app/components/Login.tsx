@@ -132,13 +132,13 @@ export function Login() {
 
             {/* Headline */}
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200">
+              <div className="inline-flex items-center gap-2 bg-green-50 text-green-900 text-sm px-3 py-1.5 rounded-full border border-green-200">
                 <TrendingUp className="w-3.5 h-3.5" />
                 615+ Active Tenders Available
               </div>
               <h2 className="text-4xl font-bold text-slate-900 leading-tight">
                 Win More Tenders,<br />
-                <span className="text-green-500">Faster Than Ever</span>
+                <span className="text-green-800">Faster Than Ever</span>
               </h2>
               <p className="text-slate-500 text-base leading-relaxed">
                 TenderHub aggregates government and private sector tenders in one place — so you spend less time searching and more time winning.
@@ -156,13 +156,13 @@ export function Login() {
                 },
                 {
                   icon: Shield,
-                  color: 'bg-amber-50 text-amber-600',
+                  color: 'bg-green-50 text-green-700',
                   title: 'Bid Bond Applications',
                   desc: 'Apply for bid bonds through our partner banks directly from the platform. Track status in real time.',
                 },
                 {
                   icon: CheckCircle,
-                  color: 'bg-green-50 text-green-600',
+                  color: 'bg-green-50 text-green-800',
                   title: 'Never Miss a Deadline',
                   desc: 'Active tenders are refreshed every 6 hours. Expired tenders are automatically removed from your feed.',
                 },

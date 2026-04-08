@@ -25,7 +25,7 @@ export function BankListItem({ bank, onEdit, onDelete }: Props) {
             <div className="flex items-center gap-3 mb-2">
               <h3 className="font-semibold text-lg">{bank.name}</h3>
               {bank.digitalOption && (
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                <Badge variant="secondary" className="bg-green-100 text-green-950 border-green-200">
                   <CheckCircle className="w-3 h-3 mr-1" />
                   Digital
                 </Badge>

@@ -49,7 +49,7 @@ export function HomePage() {
 
             {/* Left */}
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 text-sm font-medium px-3 py-1.5 rounded-full border border-green-200">
+              <div className="inline-flex items-center gap-2 bg-green-50 text-green-900 text-sm font-medium px-3 py-1.5 rounded-full border border-green-200">
                 <TrendingUp className="w-3.5 h-3.5" />
                 615+ Active Tenders Available
               </div>
@@ -58,7 +58,7 @@ export function HomePage() {
                 <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 leading-tight">
                   Kenya's Leading Tender
                 </h1>
-                <h1 className="text-4xl sm:text-5xl font-bold text-green-500 leading-tight">
+                <h1 className="text-4xl sm:text-5xl font-bold text-green-800 leading-tight">
                   Aggregation Platform
                 </h1>
               </div>
@@ -100,8 +100,8 @@ export function HomePage() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-6 space-y-4">
               {[
                 { icon: Building2, color: 'bg-blue-50 text-blue-900', title: 'Government Opportunities', desc: 'From all ministries & counties' },
-                { icon: Search, color: 'bg-green-50 text-green-600', title: 'Smart Filtering', desc: 'Find relevant tenders fast' },
-                { icon: Shield, color: 'bg-amber-50 text-amber-600', title: 'Bid Bond Management', desc: 'Integrated with local banks' },
+                { icon: Search, color: 'bg-green-50 text-green-800', title: 'Smart Filtering', desc: 'Find relevant tenders fast' },
+                { icon: Shield, color: 'bg-green-50 text-green-700', title: 'Bid Bond Management', desc: 'Integrated with local banks' },
               ].map(({ icon: Icon, color, title, desc }) => (
                 <div key={title} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                   <div className="flex items-center gap-4">
@@ -113,7 +113,7 @@ export function HomePage() {
                       <div className="text-xs text-slate-500">{desc}</div>
                     </div>
                   </div>
-                  <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                  <CheckCircle className="w-5 h-5 text-green-800 shrink-0" />
                 </div>
               ))}
             </div>
@@ -132,8 +132,8 @@ export function HomePage() {
             {[
               { icon: Search, color: 'bg-blue-50 text-blue-900', title: 'Smart Search', desc: 'Filter by category, ministry, amount, and deadline to find relevant opportunities' },
               { icon: Bell, color: 'bg-blue-50 text-blue-700', title: 'Live Updates', desc: 'Real-time tender updates from government portals and private organizations' },
-              { icon: Shield, color: 'bg-amber-50 text-amber-600', title: 'Bid Bonds', desc: 'Direct integration with Kenyan banks for seamless bid bond applications' },
-              { icon: BarChart3, color: 'bg-green-50 text-green-600', title: 'Track Progress', desc: 'Monitor application status and manage all submissions from one dashboard' },
+              { icon: Shield, color: 'bg-green-50 text-green-700', title: 'Bid Bonds', desc: 'Direct integration with Kenyan banks for seamless bid bond applications' },
+              { icon: BarChart3, color: 'bg-green-50 text-green-800', title: 'Track Progress', desc: 'Monitor application status and manage all submissions from one dashboard' },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${color}`}>
@@ -158,8 +158,8 @@ export function HomePage() {
             {[
               { icon: Briefcase, color: 'bg-blue-50 text-blue-900', title: 'Works', desc: 'Construction, infrastructure, and civil engineering projects', value: 'Works' },
               { icon: Cpu, color: 'bg-blue-50 text-blue-700', title: 'Services', desc: 'Professional services, IT, consulting, and maintenance', value: 'Services' },
-              { icon: Package, color: 'bg-amber-50 text-amber-600', title: 'Goods', desc: 'Equipment, supplies, materials, and commodities', value: 'Goods' },
-              { icon: Users, color: 'bg-green-50 text-green-600', title: 'Consultancy', desc: 'Expert advisory, research, and specialized consulting', value: 'Consultancy Services' },
+              { icon: Package, color: 'bg-green-50 text-green-700', title: 'Goods', desc: 'Equipment, supplies, materials, and commodities', value: 'Goods' },
+              { icon: Users, color: 'bg-green-50 text-green-800', title: 'Consultancy', desc: 'Expert advisory, research, and specialized consulting', value: 'Consultancy Services' },
             ].map(({ icon: Icon, color, title, desc, value }) => (
               <button
                 key={title}
@@ -185,7 +185,7 @@ export function HomePage() {
           <div className="flex flex-wrap gap-3 justify-center">
             <Button
               size="lg"
-              className="gap-2 bg-green-500 hover:bg-green-700 text-white border-0"
+              className="gap-2 bg-green-500 hover:bg-green-900 text-white border-0"
               onClick={() => navigate('/tenders')}
             >
               Browse Active Tenders

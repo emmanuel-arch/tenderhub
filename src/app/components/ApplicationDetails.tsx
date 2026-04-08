@@ -78,11 +78,11 @@ export function ApplicationDetails() {
   const getStatusIcon = (status: string) => {
     const lowerStatus = status.toLowerCase();
     if (lowerStatus.includes('approved')) {
-      return <CheckCircle className="w-5 h-5 text-green-600" />;
+      return <CheckCircle className="w-5 h-5 text-green-800" />;
     } else if (lowerStatus.includes('rejected')) {
       return <XCircle className="w-5 h-5 text-red-600" />;
     } else if (lowerStatus.includes('review') || lowerStatus.includes('pending')) {
-      return <Clock className="w-5 h-5 text-amber-600" />;
+      return <Clock className="w-5 h-5 text-green-700" />;
     } else {
       return <FileText className="w-5 h-5 text-blue-900" />;
     }
@@ -91,9 +91,9 @@ export function ApplicationDetails() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-950 border-green-200';
       case 'pending':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-green-100 text-green-900 border-green-200';
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'submitted':
@@ -192,7 +192,7 @@ export function ApplicationDetails() {
                   </div>
                   {application.approvedAt && (
                     <div className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 text-green-800 mt-0.5" />
                       <div>
                         <div className="text-sm text-slate-500 mb-1">Approved On</div>
                         <div className="font-medium">{formatDate(application.approvedAt)}</div>
@@ -205,9 +205,9 @@ export function ApplicationDetails() {
 
             {application.status === 'approved' && (
               <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <AlertTitle className="text-green-900">Application Approved</AlertTitle>
-                <AlertDescription className="text-green-800">
+                <CheckCircle className="h-5 w-5 text-green-800" />
+                <AlertTitle className="text-green-950">Application Approved</AlertTitle>
+                <AlertDescription className="text-green-950">
                   Your bid bond has been approved and is ready for download. You can now proceed with your tender submission.
                 </AlertDescription>
               </Alert>
@@ -227,10 +227,10 @@ export function ApplicationDetails() {
             )}
 
             {application.status === 'pending' && (
-              <Alert className="border-amber-200 bg-amber-50">
-                <Clock className="h-5 w-5 text-amber-600" />
-                <AlertTitle className="text-amber-900">Application Under Review</AlertTitle>
-                <AlertDescription className="text-amber-800">
+              <Alert className="border-green-200 bg-green-50">
+                <Clock className="h-5 w-5 text-green-700" />
+                <AlertTitle className="text-green-950">Application Under Review</AlertTitle>
+                <AlertDescription className="text-green-900">
                   Your application is currently being reviewed by {application.bankName}. This typically takes 2-5 business days.
                 </AlertDescription>
               </Alert>
@@ -272,7 +272,7 @@ export function ApplicationDetails() {
             {application.status === 'approved' && application.documentUrl && (
               <Card className="border-green-200">
                 <CardHeader>
-                  <CardTitle className="text-green-900">Download Document</CardTitle>
+                  <CardTitle className="text-green-950">Download Document</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-sm text-slate-600">

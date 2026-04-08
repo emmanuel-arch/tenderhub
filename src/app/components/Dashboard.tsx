@@ -73,9 +73,9 @@ export function Dashboard() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-green-800" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-amber-600" />;
+        return <Clock className="w-5 h-5 text-green-700" />;
       case 'rejected':
         return <XCircle className="w-5 h-5 text-red-600" />;
       default:
@@ -86,9 +86,9 @@ export function Dashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-950 border-green-200';
       case 'pending':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-green-100 text-green-900 border-green-200';
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       default:
@@ -153,7 +153,7 @@ export function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{userApplications.length}</div>
-              <div className="flex items-center gap-1 text-sm text-green-600 mt-1">
+              <div className="flex items-center gap-1 text-sm text-green-800 mt-1">
                 <TrendingUp className="w-4 h-4" />
                 <span>All time</span>
               </div>
@@ -165,7 +165,7 @@ export function Dashboard() {
               <CardTitle className="text-sm font-medium text-slate-600">Approved</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-3xl font-bold text-green-800">
                 {userApplications.filter(a => a.status.toLowerCase() === 'approved').length}
               </div>
               <div className="text-sm text-slate-600 mt-1">Ready to download</div>
@@ -177,7 +177,7 @@ export function Dashboard() {
               <CardTitle className="text-sm font-medium text-slate-600">Pending</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-amber-600">
+              <div className="text-3xl font-bold text-green-700">
                 {userApplications.filter(a => a.status.toLowerCase() === 'pending').length}
               </div>
               <div className="text-sm text-slate-600 mt-1">Under review</div>
@@ -267,11 +267,11 @@ export function Dashboard() {
                   <div className="flex items-start gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       notification.type === 'success' ? 'bg-green-100' :
-                      notification.type === 'warning' ? 'bg-amber-100' : 'bg-blue-100'
+                      notification.type === 'warning' ? 'bg-green-100' : 'bg-blue-100'
                     }`}>
                       <Bell className={`w-5 h-5 ${
-                        notification.type === 'success' ? 'text-green-600' :
-                        notification.type === 'warning' ? 'text-amber-600' : 'text-blue-900'
+                        notification.type === 'success' ? 'text-green-800' :
+                        notification.type === 'warning' ? 'text-green-700' : 'text-blue-900'
                       }`} />
                     </div>
                     <div className="flex-1">

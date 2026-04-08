@@ -62,7 +62,7 @@ export function ScrapedTenderCard({ tender }: Props) {
             </span>
           )}
           {tender.deadline && (
-            <span className={`flex items-center gap-1 ${isExpired ? 'text-red-600' : isUrgent ? 'text-amber-600 font-medium' : ''}`}>
+            <span className={`flex items-center gap-1 ${isExpired ? 'text-red-600' : isUrgent ? 'text-green-700 font-medium' : ''}`}>
               <Calendar className="w-3.5 h-3.5" />
               {isExpired ? 'Expired' : `Deadline: ${formatDate(tender.deadline)}`}
               {isUrgent && !isExpired && (
@@ -89,7 +89,7 @@ export function ScrapedTenderCard({ tender }: Props) {
             </Badge>
           )}
           {tender.bidBondRequired && (
-            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-xs">
+            <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 text-xs">
               Bid Bond Required
             </Badge>
           )}

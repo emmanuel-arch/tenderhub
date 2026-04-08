@@ -31,9 +31,9 @@ function FileDropzone({ label, accept, hint, required = true, file, error, onFil
       }`}>
         {file ? (
           <>
-            <CheckCircle className="w-10 h-10 mx-auto text-green-500 mb-2" />
-            <div className="font-medium text-green-700 mb-1">{label}</div>
-            <div className="text-sm text-green-600 flex items-center justify-center gap-1">
+            <CheckCircle className="w-10 h-10 mx-auto text-green-800 mb-2" />
+            <div className="font-medium text-green-900 mb-1">{label}</div>
+            <div className="text-sm text-green-800 flex items-center justify-center gap-1">
               <FileText className="w-3.5 h-3.5" />
               {file.name}
             </div>
