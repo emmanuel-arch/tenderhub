@@ -64,6 +64,14 @@ builder.Services.AddHttpClient("TendersGoKe", client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromMinutes(2);
 });
+
+// ── tenders.go.ke Proxy (browser-facing) ─────────────────────────────────────
+builder.Services.AddHttpClient("GoKe", client =>
+{
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.DefaultRequestHeaders.Add("User-Agent", "TenderHub-Proxy/1.0");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 builder.Services.AddScoped<TendersGoKeSyncService>();
 builder.Services.AddHostedService<TendersGoKeBackgroundService>();
 
