@@ -5,12 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tender } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchActiveTenders } from '../services/tenderService';
 import { scrapedTendersApi, type ScrapedTenderDto, type PagedResult } from '../services/api';
-import { TenderCard } from './tender/TenderCard';
 import { ScrapedTenderCard } from './tender/ScrapedTenderCard';
 import { PaginationControls } from './tender/PaginationControls';
 
@@ -162,35 +160,39 @@ export function TenderList() {
           {/* Search & Filter Bar — shared across all tabs */}
           <Card className="mb-6">
             <CardContent className="py-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 flex gap-2">
-                  <Input
-                    placeholder="Search tenders by title, entity, or number..."
-                    value={searchInput}
-                    onChange={e => setSearchInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSearch} variant="default" className="gap-1.5">
-                    <Search className="w-4 h-4" />
-                    Search
-                  </Button>
-                </div>
-                <Select
-                  value={categoryFilter}
-                  onValueChange={v => { setCategoryFilter(v); setScrapedPage(1); }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="Goods">Goods</SelectItem>
-                    <SelectItem value="Works">Works</SelectItem>
-                    <SelectItem value="Services">Services</SelectItem>
-                    <SelectItem value="Consultancy Services">Consultancy</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex gap-2 mb-3">
+                <Input
+                  placeholder="Search tenders by title, entity, or number..."
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  className="flex-1"
+                />
+                <Button onClick={handleSearch} variant="default" className="gap-1.5">
+                  <Search className="w-4 h-4" />
+                  Search
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'all', label: 'All' },
+                  { value: 'Goods', label: 'Goods' },
+                  { value: 'Works', label: 'Works' },
+                  { value: 'Services', label: 'Services' },
+                  { value: 'Consultancy Services', label: 'Consultancy' },
+                ].map(cat => (
+                  <button
+                    key={cat.value}
+                    onClick={() => { setCategoryFilter(cat.value); setScrapedPage(1); }}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      categoryFilter === cat.value
+                        ? 'bg-blue-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
               </div>
               {searchQuery && (
                 <div className="mt-2 flex items-center gap-2">
@@ -277,7 +279,22 @@ export function TenderList() {
                 </div>
                 <div className="space-y-4">
                   {apiTenders.map(t => (
-                    <TenderCard key={t.id} tender={t} />
+                    <ScrapedTenderCard key={t.id} tender={{
+                      id: t.id,
+                      source: 'tenders.go.ke',
+                      title: t.title,
+                      tenderNumber: t.tenderNumber,
+                      procuringEntity: t.procuringEntity,
+                      deadline: t.deadline,
+                      category: t.category,
+                      subCategory: t.subCategory,
+                      summary: t.summary,
+                      description: t.description,
+                      documentUrl: t.documentUrl,
+                      bidBondRequired: t.bidBondRequired,
+                      bidBondAmount: t.bidBondAmount,
+                      createdAt: new Date().toISOString(),
+                    } as ScrapedTenderDto} />
                   ))}
                 </div>
               </>

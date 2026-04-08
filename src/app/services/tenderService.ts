@@ -123,7 +123,8 @@ export async function fetchActiveTenders(page: number = 1): Promise<TenderPageRe
     return cached.value;
   }
 
-  const response = await fetchWithRetry(`https://tenders.go.ke/api/active-tenders?page=${page}`);
+  const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:5000';
+  const response = await fetchWithRetry(`${BASE_URL}/api/goke-tenders/active?page=${page}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch tenders: ${response.statusText}`);
