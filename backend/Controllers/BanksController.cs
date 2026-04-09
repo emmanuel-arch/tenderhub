@@ -11,13 +11,16 @@ namespace TenderHub.API.Controllers;
 [Route("api/banks")]
 public class BanksController(ApplicationDbContext db) : ControllerBase
 {
-    /// <summary>List all active banks.</summary>
+    /// <summary>List banks, optionally including inactive ones.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<BankDto>), 200)]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool includeInactive = false)
     {
-        var banks = await db.Banks
-            .Where(b => b.IsActive)
+        var query = db.Banks.AsQueryable();
+        if (!includeInactive)
+            query = query.Where(b => b.IsActive);
+
+        var banks = await query
             .OrderBy(b => b.Name)
             .Select(b => ToDto(b))
             .ToListAsync();

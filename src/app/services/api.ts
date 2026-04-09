@@ -55,7 +55,12 @@ export const authApi = {
 // ── Banks ─────────────────────────────────────────────────────────────────────
 
 export const banksApi = {
-  list: () => request<BankDto[]>('/api/banks'),
+  list: (params?: { includeInactive?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.includeInactive) qs.set('includeInactive', 'true');
+    const query = qs.toString() ? `?${qs}` : '';
+    return request<BankDto[]>(`/api/banks${query}`);
+  },
   getById: (id: string) => request<BankDto>(`/api/banks/${id}`),
   create: (data: CreateBankDto) =>
     request<BankDto>('/api/banks', { method: 'POST', body: JSON.stringify(data) }),

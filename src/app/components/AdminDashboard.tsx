@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Shield, LogOut, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { banksApi, applicationsApi, BankDto, CreateBankDto } from '../services/api';
+import { banksApi, BankDto, CreateBankDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -22,46 +21,22 @@ const DEFAULT_FORM: Partial<CreateBankDto> = {
   institutionType: 'Bank',
 };
 
-function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub: string; color?: string }) {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-slate-600">{label}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className={`text-3xl font-bold ${color ?? ''}`}>{value}</div>
-        <div className="text-sm text-slate-600 mt-1">{sub}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const [banks, setBanks] = useState<BankDto[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
-  const [appCounts, setAppCounts] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<BankDto | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBankDto>>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    banksApi.list()
+    banksApi.list({ includeInactive: true })
       .then(setBanks)
       .catch(err => toast.error('Failed to load banks', { description: err.message }))
       .finally(() => setLoadingBanks(false));
-
-    applicationsApi.list(1)
-      .then(res => setAppCounts({
-        total: res.totalCount,
-        pending: res.data.filter(a => ['pending','submitted'].includes(a.status.toLowerCase())).length,
-        approved: res.data.filter(a => a.status.toLowerCase() === 'approved').length,
-        rejected: res.data.filter(a => a.status.toLowerCase() === 'rejected').length,
-      }))
-      .catch(() => {});
   }, []);
 
   const openAddDialog = () => {
@@ -171,18 +146,15 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Total Banks" value={loadingBanks ? '—' : banks.length} sub="Active providers" />
-          <StatCard label="Total Applications" value={appCounts.total} sub="All time" />
-          <StatCard label="Approved" value={appCounts.approved} sub="Ready to download" color="text-green-800" />
-          <StatCard label="Pending" value={appCounts.pending} sub="Under review" color="text-green-700" />
-        </div>
-
-        <Tabs defaultValue="banks" className="space-y-6">
+        <Tabs defaultValue="applications" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="banks">Bank Management</TabsTrigger>
             <TabsTrigger value="applications">All Applications</TabsTrigger>
+            <TabsTrigger value="banks">Bank Management</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="applications">
+            <ApplicationsTab />
+          </TabsContent>
 
           <TabsContent value="banks">
             {loadingBanks ? (
@@ -198,10 +170,6 @@ export function AdminDashboard() {
                 onToggleActive={handleToggleActive}
               />
             )}
-          </TabsContent>
-
-          <TabsContent value="applications">
-            <ApplicationsTab />
           </TabsContent>
         </Tabs>
       </main>

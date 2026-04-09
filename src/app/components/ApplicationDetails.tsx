@@ -27,9 +27,11 @@ import { Toaster } from './ui/sonner';
 export function ApplicationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const [application, setApplication] = useState<ApplicationDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const dashboardPath = isAdmin ? '/admin' : '/dashboard';
+  const dashboardLabel = isAdmin ? 'Back to Admin' : 'Back to Dashboard';
 
   useEffect(() => {
     if (!id) return;
@@ -55,7 +57,7 @@ export function ApplicationDetails() {
             <CardTitle>Application Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+            <Button onClick={() => navigate(dashboardPath)}>{dashboardLabel}</Button>
           </CardContent>
         </Card>
       </div>
@@ -118,9 +120,9 @@ export function ApplicationDetails() {
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col">
           <div className="flex items-center justify-between mb-2">
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+            <Button variant="ghost" onClick={() => navigate(dashboardPath)}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              {dashboardLabel}
             </Button>
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
