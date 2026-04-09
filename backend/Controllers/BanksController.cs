@@ -41,6 +41,7 @@ public class BanksController(ApplicationDbContext db) : ControllerBase
     [ProducesResponseType(typeof(BankDto), 201)]
     public async Task<IActionResult> Create([FromBody] CreateBankDto dto)
     {
+        var institutionType = Enum.TryParse<InstitutionType>(dto.InstitutionType, true, out var it) ? it : InstitutionType.Bank;
         var bank = new Bank
         {
             Name = dto.Name,
@@ -48,7 +49,8 @@ public class BanksController(ApplicationDbContext db) : ControllerBase
             ProcessingTime = dto.ProcessingTime,
             Fees = dto.Fees,
             DigitalOption = dto.DigitalOption,
-            Rating = dto.Rating
+            Rating = dto.Rating,
+            InstitutionType = institutionType
         };
 
         db.Banks.Add(bank);
@@ -74,6 +76,8 @@ public class BanksController(ApplicationDbContext db) : ControllerBase
         if (dto.DigitalOption.HasValue) bank.DigitalOption = dto.DigitalOption.Value;
         if (dto.Rating.HasValue) bank.Rating = dto.Rating.Value;
         if (dto.IsActive.HasValue) bank.IsActive = dto.IsActive.Value;
+        if (dto.InstitutionType is not null && Enum.TryParse<InstitutionType>(dto.InstitutionType, true, out var updatedIt))
+            bank.InstitutionType = updatedIt;
         bank.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
@@ -103,6 +107,7 @@ public class BanksController(ApplicationDbContext db) : ControllerBase
         Fees = b.Fees,
         DigitalOption = b.DigitalOption,
         Rating = b.Rating,
-        IsActive = b.IsActive
+        IsActive = b.IsActive,
+        InstitutionType = b.InstitutionType.ToString()
     };
 }

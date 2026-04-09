@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TenderHub.API.Models;
 
 namespace TenderHub.API.DTOs.Banks;
 
@@ -12,6 +13,7 @@ public class BankDto
     public bool DigitalOption { get; set; }
     public decimal Rating { get; set; }
     public bool IsActive { get; set; }
+    public string InstitutionType { get; set; } = "Bank";
 }
 
 public class CreateBankDto
@@ -22,6 +24,7 @@ public class CreateBankDto
     [Required] public string Fees { get; set; } = string.Empty;
     public bool DigitalOption { get; set; }
     [Range(0, 5)] public decimal Rating { get; set; }
+    public string InstitutionType { get; set; } = "Bank";
 }
 
 public class UpdateBankDto
@@ -33,4 +36,5 @@ public class UpdateBankDto
     public bool? DigitalOption { get; set; }
     [Range(0, 5)] public decimal? Rating { get; set; }
     public bool? IsActive { get; set; }
+    public string? InstitutionType { get; set; }
 }

@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router';
-import { Calendar, Building2, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, Building2, Clock, AlertCircle, Bookmark } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Tender } from '../../data/mockData';
 import { formatDate } from '../../utils/formatters';
+import { useSavedTenders } from '../../hooks/useSavedTenders';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 function getDaysRemaining(deadline: string) {
   const diff = new Date(deadline).getTime() - new Date().getTime();
@@ -17,6 +19,8 @@ interface Props {
 
 export function TenderCard({ tender }: Props) {
   const navigate = useNavigate();
+  const { isSaved, toggle } = useSavedTenders();
+  const saved = isSaved(tender.id);
   const daysRemaining = getDaysRemaining(tender.deadline);
   const isUrgent = daysRemaining <= 7;
 
@@ -41,9 +45,22 @@ export function TenderCard({ tender }: Props) {
               )}
             </div>
           </div>
-          <Badge variant={tender.category === 'government' ? 'default' : 'secondary'}>
-            {tender.category === 'government' ? 'Government' : 'Private'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={tender.category === 'government' ? 'default' : 'secondary'}>
+              {tender.category === 'government' ? 'Government' : 'Private'}
+            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={e => { e.stopPropagation(); toggle({ ...tender, source: 'private', externalId: tender.id, bidBondAmount: 0, createdAt: new Date().toISOString() } as any); }}
+                  className="text-slate-400 hover:text-blue-900 transition-colors"
+                >
+                  <Bookmark className={`w-5 h-5 ${saved ? 'fill-blue-900 text-blue-900' : ''}`} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{saved ? 'Remove from saved' : 'Save for later'}</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

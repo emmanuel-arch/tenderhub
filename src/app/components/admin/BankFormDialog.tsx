@@ -3,8 +3,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
-import { Switch } from '../ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { BankDto, CreateBankDto } from '../../services/api';
 
 interface Props {
@@ -37,6 +37,22 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g., KCB Bank Kenya"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Institution Type *</Label>
+            <Select
+              value={formData.institutionType ?? 'Bank'}
+              onValueChange={v => set('institutionType', v as 'Bank' | 'Microfinance')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Bank">Bank</SelectItem>
+                <SelectItem value="Microfinance">Microfinance</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -84,18 +100,6 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
           </div>
 
           <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="digitalOption">Digital Application</Label>
-              <p className="text-sm text-slate-600">Allow customers to apply online without visiting a branch</p>
-            </div>
-            <Switch
-              id="digitalOption"
-              checked={formData.digitalOption || false}
-              onCheckedChange={(checked) => set('digitalOption', checked)}
-            />
-          </div>
         </div>
 
         <DialogFooter>

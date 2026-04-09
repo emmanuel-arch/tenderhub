@@ -177,6 +177,51 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* ── Reviews ── */}
+      <section className="py-20 px-4 bg-slate-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">What Our Users Say</h2>
+            <p className="text-slate-500">Trusted by procurement professionals across Kenya</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                initials: 'JM',
+                name: 'James Mwangi',
+                title: 'Procurement Manager, Nairobi',
+                review: 'TenderHub has transformed how we find and apply for government tenders. We no longer miss opportunities.',
+              },
+              {
+                initials: 'AO',
+                name: 'Amina Omar',
+                title: 'Director, Mombasa SME',
+                review: 'The bid bond application process used to take days. With TenderHub and their partner banks, we get approvals the same day.',
+              },
+              {
+                initials: 'KK',
+                name: 'Kevin Kamau',
+                title: 'CEO, Nairobi Construction Ltd',
+                review: 'Having all tenders — government and private — in one place saves us hours every week. The deadline alerts are a lifesaver.',
+              },
+            ].map(({ initials, name, title, review }) => (
+              <div key={name} className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col gap-4">
+                <p className="text-sm text-slate-600 italic leading-relaxed flex-1">"{review}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
+                    {initials}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{name}</div>
+                    <div className="text-xs text-slate-400">{title}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA ── */}
       <section className="py-20 px-4 bg-slate-900">
         <div className="max-w-2xl mx-auto text-center space-y-6">

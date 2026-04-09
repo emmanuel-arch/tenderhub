@@ -9,9 +9,10 @@ interface Props {
   onAdd: () => void;
   onEdit: (bank: BankDto) => void;
   onDelete: (id: string) => void;
+  onToggleActive: (bank: BankDto) => void;
 }
 
-export function BankManagementTab({ banks, onAdd, onEdit, onDelete }: Props) {
+export function BankManagementTab({ banks, onAdd, onEdit, onDelete, onToggleActive }: Props) {
   return (
     <Card>
       <CardHeader>
@@ -26,7 +27,13 @@ export function BankManagementTab({ banks, onAdd, onEdit, onDelete }: Props) {
       <CardContent>
         <div className="space-y-4">
           {banks.map(bank => (
-            <BankListItem key={bank.id} bank={bank} onEdit={onEdit} onDelete={onDelete} />
+            <BankListItem
+              key={bank.id}
+              bank={bank}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onToggleActive={onToggleActive}
+            />
           ))}
 
           {banks.length === 0 && (

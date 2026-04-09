@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard, Bookmark, Bell, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard, ExternalLink } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -429,22 +429,6 @@ export function TenderDetails() {
                 </Card>
               )}
 
-              {/* Quick Actions */}
-              <Card className="shadow-md border-0">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-blue-50 hover:text-blue-900 hover:border-blue-200">
-                    <Bookmark className="w-4 h-4" />
-                    Save for Later
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start gap-2 hover:bg-green-50 hover:text-green-800 hover:border-green-200">
-                    <Bell className="w-4 h-4" />
-                    Set Reminder
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

@@ -47,6 +47,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             e.HasKey(b => b.Id);
             e.Property(b => b.Name).HasMaxLength(200).IsRequired();
             e.Property(b => b.Rating).HasColumnType("numeric(3,1)");
+            e.Property(b => b.InstitutionType).HasConversion<string>();
         });
 
         // ── Applications ──────────────────────────────────────────────────────

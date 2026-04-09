@@ -4,7 +4,7 @@ import { Shield, LogOut, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { banksApi, BankDto, CreateBankDto } from '../services/api';
+import { banksApi, applicationsApi, BankDto, CreateBankDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -16,9 +16,10 @@ const DEFAULT_FORM: Partial<CreateBankDto> = {
   name: '',
   processingTime: '',
   fees: '',
-  digitalOption: false,
+  digitalOption: true,
   rating: 4.0,
   logo: '',
+  institutionType: 'Bank',
 };
 
 function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub: string; color?: string }) {
@@ -41,6 +42,7 @@ export function AdminDashboard() {
 
   const [banks, setBanks] = useState<BankDto[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
+  const [appCounts, setAppCounts] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<BankDto | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBankDto>>(DEFAULT_FORM);
@@ -51,6 +53,15 @@ export function AdminDashboard() {
       .then(setBanks)
       .catch(err => toast.error('Failed to load banks', { description: err.message }))
       .finally(() => setLoadingBanks(false));
+
+    applicationsApi.list(1)
+      .then(res => setAppCounts({
+        total: res.totalCount,
+        pending: res.data.filter(a => ['pending','submitted'].includes(a.status.toLowerCase())).length,
+        approved: res.data.filter(a => a.status.toLowerCase() === 'approved').length,
+        rejected: res.data.filter(a => a.status.toLowerCase() === 'rejected').length,
+      }))
+      .catch(() => {});
   }, []);
 
   const openAddDialog = () => {
@@ -66,8 +77,9 @@ export function AdminDashboard() {
       logo: bank.logo,
       processingTime: bank.processingTime,
       fees: bank.fees,
-      digitalOption: bank.digitalOption,
+      digitalOption: true,
       rating: bank.rating,
+      institutionType: bank.institutionType,
     });
     setIsDialogOpen(true);
   };
@@ -83,6 +95,19 @@ export function AdminDashboard() {
     }
   };
 
+  const handleToggleActive = async (bank: BankDto) => {
+    try {
+      const updated = await banksApi.update(bank.id, { isActive: !bank.isActive });
+      setBanks(prev => prev.map(b => b.id === bank.id ? updated : b));
+      toast.success(
+        updated.isActive ? 'Bank activated' : 'Bank deactivated',
+        { description: `${updated.name} is now ${updated.isActive ? 'active' : 'inactive'}.` }
+      );
+    } catch (err: any) {
+      toast.error('Update failed', { description: err.message });
+    }
+  };
+
   const handleSaveBank = async () => {
     if (!formData.name || !formData.processingTime || !formData.fees) {
       toast.error('Missing fields', { description: 'Please fill in all required fields.' });
@@ -91,12 +116,13 @@ export function AdminDashboard() {
 
     setSaving(true);
     try {
+      const payload = { ...formData, digitalOption: true };
       if (editingBank) {
-        const updated = await banksApi.update(editingBank.id, formData);
+        const updated = await banksApi.update(editingBank.id, payload);
         setBanks(prev => prev.map(b => b.id === editingBank.id ? updated : b));
         toast.success('Bank updated', { description: `${updated.name} updated successfully.` });
       } else {
-        const created = await banksApi.create(formData as CreateBankDto);
+        const created = await banksApi.create(payload as CreateBankDto);
         setBanks(prev => [...prev, created]);
         toast.success('Bank added', { description: `${created.name} added to the system.` });
       }
@@ -145,18 +171,11 @@ export function AdminDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <StatCard
-            label="Total Banks"
-            value={loadingBanks ? '—' : banks.length}
-            sub="Active providers"
-          />
-          <StatCard
-            label="Active Banks"
-            value={loadingBanks ? '—' : banks.filter(b => b.isActive).length}
-            sub="Available to clients"
-            color="text-green-800"
-          />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Banks" value={loadingBanks ? '—' : banks.length} sub="Active providers" />
+          <StatCard label="Total Applications" value={appCounts.total} sub="All time" />
+          <StatCard label="Approved" value={appCounts.approved} sub="Ready to download" color="text-green-800" />
+          <StatCard label="Pending" value={appCounts.pending} sub="Under review" color="text-green-700" />
         </div>
 
         <Tabs defaultValue="banks" className="space-y-6">
@@ -176,6 +195,7 @@ export function AdminDashboard() {
                 onAdd={openAddDialog}
                 onEdit={openEditDialog}
                 onDelete={handleDeleteBank}
+                onToggleActive={handleToggleActive}
               />
             )}
           </TabsContent>

@@ -32,6 +32,7 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
         var query = db.Applications
             .Include(a => a.Documents)
             .Include(a => a.StatusHistory)
+            .Include(a => a.Bank)
             .AsQueryable();
 
         if (!IsAdmin)
@@ -42,12 +43,12 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
             .OrderByDescending(a => a.SubmittedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(a => ToDto(a))
             .ToListAsync();
+        var dtos = items.Select(a => ToDto(a)).ToList();
 
         return Ok(new PagedResult<ApplicationDto>
         {
-            Data = items,
+            Data = dtos,
             CurrentPage = page,
             PageSize = pageSize,
             TotalCount = total
@@ -64,6 +65,7 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
         var app = await db.Applications
             .Include(a => a.Documents)
             .Include(a => a.StatusHistory)
+            .Include(a => a.Bank)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (app is null) return NotFound();
@@ -151,6 +153,7 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
         var app = await db.Applications
             .Include(a => a.Documents)
             .Include(a => a.StatusHistory)
+            .Include(a => a.Bank)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (app is null) return NotFound();
@@ -188,6 +191,7 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
         TenderTitle = a.TenderTitle,
         TenderNumber = a.TenderNumber,
         BankName = a.BankName,
+        BankInstitutionType = a.Bank?.InstitutionType.ToString(),
         Status = a.Status.ToString(),
         RejectionReason = a.RejectionReason,
         DocumentUrl = a.DocumentUrl,

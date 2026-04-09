@@ -11,6 +11,7 @@ public class ApplicationDto
     public string TenderTitle { get; set; } = string.Empty;
     public string TenderNumber { get; set; } = string.Empty;
     public string? BankName { get; set; }
+    public string? BankInstitutionType { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? RejectionReason { get; set; }
     public string? DocumentUrl { get; set; }
