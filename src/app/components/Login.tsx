@@ -194,19 +194,6 @@ export function Login() {
             </div>
           </div>
 
-          {/* Testimonial */}
-          <div className="mt-8 p-4 rounded-xl bg-white border border-slate-200">
-            <p className="text-sm text-slate-600 italic leading-relaxed">
-              "TenderHub has transformed how we find and apply for government tenders. We no longer miss opportunities."
-            </p>
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">JM</div>
-              <div>
-                <div className="text-xs font-semibold text-slate-900">James Mwangi</div>
-                <div className="text-xs text-slate-400">Procurement Manager, Nairobi</div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ── Right Panel: Form ── */}

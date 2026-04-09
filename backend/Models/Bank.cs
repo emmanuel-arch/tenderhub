@@ -1,5 +1,11 @@
 namespace TenderHub.API.Models;
 
+public enum InstitutionType
+{
+    Bank,
+    Microfinance
+}
+
 public class Bank
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -9,6 +15,7 @@ public class Bank
     public string Fees { get; set; } = string.Empty;             // e.g. "KES 15,000 + 1.5% of bond value"
     public bool DigitalOption { get; set; }
     public decimal Rating { get; set; }
+    public InstitutionType InstitutionType { get; set; } = InstitutionType.Bank;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

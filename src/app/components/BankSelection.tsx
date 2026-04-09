@@ -13,25 +13,6 @@ import { ImageWithFallback } from './ImageWithFallback';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
 
-interface MfiDto {
-  id: string;
-  name: string;
-  processingTime: string;
-  fees: string;
-  rating: number;
-  digitalOption: boolean;
-}
-
-const MICROFINANCE_INSTITUTIONS: MfiDto[] = [
-  { id: 'faulu', name: 'Faulu Kenya Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.3, digitalOption: true },
-  { id: 'kwft', name: 'Kenya Women Microfinance Bank (KWFT)', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.2, digitalOption: false },
-  { id: 'smep', name: 'SMEP Microfinance Bank', processingTime: '2-3 days', fees: '1.75% of bond value', rating: 4.0, digitalOption: false },
-  { id: 'rafiki', name: 'Rafiki Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.1, digitalOption: true },
-  { id: 'century', name: 'Century Microfinance Bank', processingTime: '2-3 days', fees: '2% of bond value', rating: 3.9, digitalOption: false },
-  { id: 'caritas', name: 'Caritas Microfinance Bank', processingTime: '2-3 days', fees: '1.75% of bond value', rating: 4.0, digitalOption: false },
-  { id: 'sumac', name: 'Sumac Microfinance Bank', processingTime: '1-2 days', fees: '1.5% of bond value', rating: 4.1, digitalOption: true },
-  { id: 'uwezo', name: 'Uwezo Microfinance Bank', processingTime: '2-3 days', fees: '2% of bond value', rating: 3.8, digitalOption: false },
-];
 
 export function BankSelection() {
   const { id } = useParams();
@@ -85,6 +66,10 @@ export function BankSelection() {
           loadTender(),
         ]);
         setBanks(banksData.filter(b => b.isActive));
+        // providerType defaults to 'microfinance'; if none exist, switch to banks
+        if (!banksData.some(b => b.isActive && b.institutionType === 'Microfinance')) {
+          setProviderType('banks');
+        }
         if (tenderData) {
           // Apply bond amount from URL if present (survives login redirect)
           if (urlBondAmount && Number(urlBondAmount) > 0) {
@@ -234,67 +219,76 @@ export function BankSelection() {
         </div>
 
         {/* Microfinance Cards */}
-        {providerType === 'microfinance' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MICROFINANCE_INSTITUTIONS.map(mfi => (
-              <Card key={mfi.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
-                      <Building2 className="w-6 h-6 text-green-900" />
-                    </div>
-                    {mfi.digitalOption && (
+        {providerType === 'microfinance' && (() => {
+          const mfis = banks.filter(b => b.institutionType === 'Microfinance');
+          return mfis.length === 0 ? (
+            <Card className="shadow-md border-0">
+              <CardContent className="py-16 text-center">
+                <Building2 className="w-12 h-12 mx-auto text-slate-400 mb-3" />
+                <p className="text-slate-500 font-medium">No microfinance institutions available.</p>
+                <p className="text-slate-400 text-sm mt-1">Please contact admin to add microfinance providers.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mfis.map(mfi => (
+                <Card key={mfi.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
+                        <ImageWithFallback src={mfi.logo} alt={`${mfi.name} logo`} className="w-full h-full object-cover" width={48} height={48} />
+                      </div>
                       <Badge className="bg-green-100 text-green-950 border-green-200">
                         <Zap className="w-3 h-3 mr-1" />
                         Digital
                       </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-base leading-snug">{mfi.name}</CardTitle>
-                  <div className="flex items-center gap-1 mt-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < Math.floor(mfi.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
-                    ))}
-                    <span className="text-sm text-slate-500 ml-1.5">({mfi.rating})</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-slate-50 rounded-lg p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <Clock className="w-4 h-4" />
-                        Processing Time
-                      </div>
-                      <div className="font-semibold text-sm text-slate-900">{mfi.processingTime}</div>
                     </div>
-                    <Separator />
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <DollarSign className="w-4 h-4" />
-                        Fees
-                      </div>
-                      <div className="font-semibold text-sm text-slate-900 text-right max-w-[140px]">{mfi.fees}</div>
+                    <CardTitle className="text-base leading-snug">{mfi.name}</CardTitle>
+                    <div className="flex items-center gap-1 mt-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(mfi.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                      ))}
+                      <span className="text-sm text-slate-500 ml-1.5">({mfi.rating})</span>
                     </div>
-                  </div>
-                  <Button
-                    className="w-full bg-green-900 hover:bg-green-950 shadow-md"
-                    size="lg"
-                    onClick={() =>
-                      navigate(`/tender/${id}/bid-bond/mfi-${mfi.id}`, { state: { tender, bank: { id: `mfi-${mfi.id}`, name: mfi.name, processingTime: mfi.processingTime, fees: mfi.fees, rating: mfi.rating, digitalOption: mfi.digitalOption, logo: '', isActive: true } } })
-                    }
-                  >
-                    Select {mfi.name.split(' ').slice(0, 2).join(' ')}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-slate-50 rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <Clock className="w-4 h-4" />
+                          Processing Time
+                        </div>
+                        <div className="font-semibold text-sm text-slate-900">{mfi.processingTime}</div>
+                      </div>
+                      <Separator />
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <DollarSign className="w-4 h-4" />
+                          Fees
+                        </div>
+                        <div className="font-semibold text-sm text-slate-900 text-right max-w-[140px]">{mfi.fees}</div>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-green-900 hover:bg-green-950 shadow-md"
+                      size="lg"
+                      onClick={() => navigate(`/tender/${id}/bid-bond/${mfi.id}`, { state: { tender, bank: mfi } })}
+                    >
+                      Select {mfi.name.split(' ').slice(0, 2).join(' ')}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Bank Cards */}
-        {providerType === 'banks' && (
+        {providerType === 'banks' && (() => {
+          const commercialBanks = banks.filter(b => b.institutionType === 'Bank');
+          return (
           <>
-            {banks.length === 0 && (
+            {commercialBanks.length === 0 && (
               <Card className="shadow-md border-0">
                 <CardContent className="py-16 text-center">
                   <Shield className="w-12 h-12 mx-auto text-slate-400 mb-3" />
@@ -304,7 +298,7 @@ export function BankSelection() {
               </Card>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {banks.map(bank => (
+              {commercialBanks.map(bank => (
                 <Card key={bank.id} className="shadow-md border-0 hover:shadow-xl transition-all duration-300 group overflow-hidden">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between mb-3">
@@ -317,12 +311,10 @@ export function BankSelection() {
                           height={64}
                         />
                       </div>
-                      {bank.digitalOption && (
-                        <Badge className="bg-green-100 text-green-950 border-green-200">
-                          <Zap className="w-3 h-3 mr-1" />
-                          Digital
-                        </Badge>
-                      )}
+                      <Badge className="bg-green-100 text-green-950 border-green-200">
+                        <Zap className="w-3 h-3 mr-1" />
+                        Digital
+                      </Badge>
                     </div>
                     <CardTitle className="text-lg">{bank.name}</CardTitle>
                     <div className="flex items-center gap-1 mt-1">
@@ -364,7 +356,8 @@ export function BankSelection() {
               ))}
             </div>
           </>
-        )}
+          );
+        })()}
 
         {/* Help Card */}
         <Card className="mt-8 shadow-md border-0 overflow-hidden">
@@ -394,8 +387,8 @@ export function BankSelection() {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">
                 <Zap className="w-5 h-5 text-green-800 mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="font-medium text-sm text-slate-900">Digital Option</div>
-                  <div className="text-sm text-slate-600">Apply online without visiting a branch</div>
+                  <div className="font-medium text-sm text-slate-900">Fully Digital</div>
+                  <div className="text-sm text-slate-600">All providers support online application</div>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50/50">

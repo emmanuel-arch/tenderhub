@@ -113,7 +113,7 @@ export function TenderList() {
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-3">
-            <button onClick={() => navigate('/')} className="text-left hover:opacity-80 transition-opacity min-w-0">
+            <button onClick={() => navigate('/')} className="text-left hover:opacity-80 transition-opacity min-w-0 cursor-pointer">
               <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">TenderHub Kenya</h1>
               <p className="text-xs sm:text-sm text-slate-600 hidden sm:block">Discover government and private sector opportunities</p>
             </button>

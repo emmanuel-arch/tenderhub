@@ -152,6 +152,7 @@ export interface BankDto {
   digitalOption: boolean;
   rating: number;
   isActive: boolean;
+  institutionType: 'Bank' | 'Microfinance';
 }
 
 export interface CreateBankDto {
@@ -161,6 +162,7 @@ export interface CreateBankDto {
   fees: string;
   digitalOption: boolean;
   rating: number;
+  institutionType: 'Bank' | 'Microfinance';
 }
 
 export interface TenderDto {
@@ -216,6 +218,7 @@ export interface ApplicationDto {
   tenderTitle: string;
   tenderNumber: string;
   bankName: string;
+  bankInstitutionType?: 'Bank' | 'Microfinance';
   status: string;
   rejectionReason?: string;
   documentUrl?: string;

@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router';
-import { Calendar, Building2, Clock, ExternalLink, Download, FileText, Tag, Eye } from 'lucide-react';
+import { Calendar, Building2, Clock, ExternalLink, Download, FileText, Tag, Eye, Bookmark } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 import type { ScrapedTenderDto } from '../../services/api';
+import { useSavedTenders } from '../../hooks/useSavedTenders';
 
 function toAbsoluteUrl(url: string) {
   return url.startsWith('http') ? url : `https://tenders.go.ke${url}`;
@@ -30,6 +32,8 @@ interface Props {
 
 export function ScrapedTenderCard({ tender }: Props) {
   const navigate = useNavigate();
+  const { isSaved, toggle } = useSavedTenders();
+  const saved = isSaved(tender.id);
   const daysRemaining = getDaysRemaining(tender.deadline);
   const isExpired = daysRemaining !== null && daysRemaining < 0;
   const isUrgent = daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 7;
@@ -49,6 +53,17 @@ export function ScrapedTenderCard({ tender }: Props) {
               </div>
             )}
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => toggle(tender)}
+                className="shrink-0 text-slate-400 hover:text-blue-900 transition-colors"
+              >
+                <Bookmark className={`w-5 h-5 ${saved ? 'fill-blue-900 text-blue-900' : ''}`} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{saved ? 'Remove from saved' : 'Save for later'}</TooltipContent>
+          </Tooltip>
         </div>
       </CardHeader>
 
