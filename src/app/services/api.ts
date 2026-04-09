@@ -11,6 +11,12 @@ export class ApiError extends Error {
   }
 }
 
+async function parseJsonResponse<T>(res: Response): Promise<T | undefined> {
+  const text = await res.text();
+  if (!text.trim()) return undefined;
+  return JSON.parse(text) as T;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -22,7 +28,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
+    const body = await parseJsonResponse<Record<string, unknown>>(res).catch(() => ({})) ?? {};
     const errors = body.errors && typeof body.errors === 'object'
       ? body.errors as Record<string, string[]>
       : undefined;
@@ -34,7 +40,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json();
+  return await parseJsonResponse<T>(res) as T;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -123,12 +129,12 @@ export const documentsApi = {
     });
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+      const body = await parseJsonResponse<Record<string, unknown>>(res).catch(() => ({})) ?? {};
       const message = body.message ?? `Document upload failed: ${res.status}`;
       throw new Error(message);
     }
 
-    return res.json();
+    return await parseJsonResponse<DocumentDto>(res) as DocumentDto;
   },
 };
 
