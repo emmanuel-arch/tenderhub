@@ -127,8 +127,8 @@ export function AdminDashboard() {
                 <Shield className="w-6 h-6 text-blue-900" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Admin Control Panel</h1>
-                <p className="text-slate-600">Manage banks and monitor platform activity</p>
+                <h1 className="text-2xl font-bold">Dashboard</h1>
+                <p className="text-slate-500 text-sm">Institutions & platform overview</p>
               </div>
             </div>
             <div className="flex items-center gap-4">

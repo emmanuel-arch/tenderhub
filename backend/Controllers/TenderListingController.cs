@@ -142,12 +142,8 @@ public class TenderListingController(ScrapedDbContext db) : ControllerBase
         MinCombinedContractValue = d.MinCombinedContractValue,
         CashFlowRequirement = d.CashFlowRequirement,
         AuditedFinancialsYears = d.AuditedFinancialsYears,
-        KeyPersonnel = d.KeyPersonnel,
-        KeyEquipment = d.KeyEquipment,
         KeyRequirementsRaw = d.KeyRequirementsRaw,
         FinancialQualificationsRaw = d.FinancialQualificationsRaw,
-        KeyPersonnelRaw = d.KeyPersonnelRaw,
-        KeyEquipmentRaw = d.KeyEquipmentRaw,
         DocumentParsed = d.DocumentParsed,
         ParseError = d.ParseError,
     };

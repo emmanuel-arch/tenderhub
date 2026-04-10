@@ -74,6 +74,19 @@ export function TenderDetails() {
 
   const isScraped = id?.startsWith('s-');
 
+  // Auto-populate manual bond amount from document details or tender record
+  useEffect(() => {
+    if (manualBondAmount) return; // don't overwrite if user already typed
+    if (documentDetails?.bidBondAmount) {
+      // Extract numeric portion from strings like "KES 500,000" or "500000"
+      const numeric = documentDetails.bidBondAmount.replace(/[^0-9.]/g, '');
+      if (numeric) { setManualBondAmount(numeric); return; }
+    }
+    if (tender && tender.bidBondAmount > 0) {
+      setManualBondAmount(String(tender.bidBondAmount));
+    }
+  }, [documentDetails, tender]);
+
   useEffect(() => {
     const loadTender = async () => {
       if (!id) return;
@@ -275,7 +288,7 @@ export function TenderDetails() {
                   <h3 className="font-semibold text-slate-900 mb-3">Tender Requirements</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
                     <DetailItem icon={<Calendar className="w-5 h-5 text-orange-700" />} bg="bg-orange-100" label="Submission Deadline" value={documentDetails?.submissionDeadline} />
-                    <DetailItem icon={<AlertCircle className="w-5 h-5 text-green-700" />} bg="bg-green-100" label="Bid Bond Amount" value={documentDetails?.bidBondAmount} />
+                    <DetailItem icon={<AlertCircle className="w-5 h-5 text-green-700" />} bg="bg-green-100" label="Bid Bond Amount" value={documentDetails?.bidBondAmount ?? (tender.bidBondAmount > 0 ? formatCurrency(tender.bidBondAmount) : undefined)} />
                     <DetailItem icon={<FileText className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Form" value={documentDetails?.bidBondForm} />
                     <DetailItem icon={<Calendar className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Validity" value={documentDetails?.bidBondValidity} />
                     <DetailItem icon={<Calendar className="w-5 h-5 text-slate-600" />} bg="bg-slate-100" label="Bid Validity Period" value={documentDetails?.bidValidityPeriod} />
@@ -325,59 +338,6 @@ export function TenderDetails() {
                       <p className="mt-2 text-xs text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.financialQualificationsRaw}</p>
                     </details>
                   )}
-                </div>
-
-                {/* Key Personnel */}
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-3">Key Personnel</h3>
-                  {(() => {
-                    let items: { role?: string; qualifications?: string }[] = [];
-                    try { items = JSON.parse(documentDetails?.keyPersonnel || '[]'); } catch { /* ignore */ }
-                    if (items.length > 0) {
-                      return (
-                        <div className="space-y-2">
-                          {items.map((p, i) => (
-                            <div key={i} className="p-3 rounded-lg bg-slate-50 border text-sm">
-                              {p.role && <div className="font-semibold text-slate-900">{p.role}</div>}
-                              {p.qualifications && <div className="text-slate-600 mt-1">{p.qualifications}</div>}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    if (documentDetails?.keyPersonnelRaw) {
-                      return <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.keyPersonnelRaw}</p>;
-                    }
-                    return <p className="text-sm text-slate-500 italic">No key personnel requirements specified.</p>;
-                  })()}
-                </div>
-
-                {/* Key Equipment / Qualifications */}
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-3">Key Equipment & Qualifications</h3>
-                  {(() => {
-                    let items: { equipment_type?: string; min_quantity?: number }[] = [];
-                    try { items = JSON.parse(documentDetails?.keyEquipment || '[]'); } catch { /* ignore */ }
-                    const filtered = items.filter(e => e.equipment_type);
-                    if (filtered.length > 0) {
-                      return (
-                        <div className="space-y-2">
-                          {filtered.map((e, i) => (
-                            <div key={i} className="p-3 rounded-lg bg-slate-50 border text-sm flex items-start justify-between gap-3">
-                              <span className="text-slate-700">{e.equipment_type}</span>
-                              {e.min_quantity != null && (
-                                <span className="shrink-0 text-xs font-medium text-blue-900 bg-blue-50 border border-blue-200 rounded px-2 py-0.5">Min: {e.min_quantity}</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    if (documentDetails?.keyEquipmentRaw) {
-                      return <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.keyEquipmentRaw}</p>;
-                    }
-                    return <p className="text-sm text-slate-500 italic">No equipment requirements specified.</p>;
-                  })()}
                 </div>
 
                 <Separator />
@@ -513,7 +473,7 @@ export function TenderDetails() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-slate-600">
-                      This tender has no bid bond amount set. Enter the amount manually to apply through a bank.
+                      No bid bond amount found in the tender document. Enter it below to get started.
                     </p>
                     <div className="space-y-2">
                       <Label htmlFor="manual-bond-amount">Bid Bond Amount (KES)</Label>

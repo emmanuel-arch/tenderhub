@@ -1,4 +1,4 @@
-import { Edit, Trash2, Clock, DollarSign, Star, CheckCircle } from 'lucide-react';
+import { Edit, Trash2, Clock, DollarSign, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Switch } from '../ui/switch';
@@ -37,10 +37,6 @@ export function BankListItem({ bank, onEdit, onDelete, onToggleActive }: Props) 
               <Badge variant="outline" className={bank.isActive ? 'text-green-800 border-green-300 bg-green-50' : 'text-slate-500'}>
                 {bank.isActive ? 'Active' : 'Inactive'}
               </Badge>
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                <span className="text-sm font-medium">{bank.rating}</span>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-600">

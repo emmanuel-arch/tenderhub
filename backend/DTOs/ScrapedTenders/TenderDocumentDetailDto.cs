@@ -26,15 +26,9 @@ public class TenderDocumentDetailDto
     public string? CashFlowRequirement { get; set; }
     public string? AuditedFinancialsYears { get; set; }
 
-    // Section 3 & 4: JSON arrays (returned as strings, parse on client)
-    public string? KeyPersonnel { get; set; }
-    public string? KeyEquipment { get; set; }
-
-    // Raw section text (fallback when JSON arrays are empty)
+    // Raw section text
     public string? KeyRequirementsRaw { get; set; }
     public string? FinancialQualificationsRaw { get; set; }
-    public string? KeyPersonnelRaw { get; set; }
-    public string? KeyEquipmentRaw { get; set; }
 
     // Metadata
     public bool DocumentParsed { get; set; }

@@ -315,12 +315,8 @@ export interface TenderDocumentDetailDto {
   minCombinedContractValue?: string;
   cashFlowRequirement?: string;
   auditedFinancialsYears?: string;
-  keyPersonnel?: string;
-  keyEquipment?: string;
   keyRequirementsRaw?: string;
   financialQualificationsRaw?: string;
-  keyPersonnelRaw?: string;
-  keyEquipmentRaw?: string;
   documentParsed: boolean;
   parseError?: string;
 }

@@ -30,7 +30,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Bank Name *</Label>
+            <Label htmlFor="name">Institution Name *</Label>
             <Input
               id="name"
               value={formData.name || ''}
@@ -56,37 +56,24 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logo">Logo URL</Label>
+            <Label htmlFor="processingTime">Processing Time *</Label>
             <Input
-              id="logo"
-              value={formData.logo || ''}
-              onChange={(e) => set('logo', e.target.value)}
-              placeholder="https://example.com/logo.png"
+              id="processingTime"
+              value={formData.processingTime || ''}
+              onChange={(e) => set('processingTime', e.target.value)}
+              placeholder="e.g., 2-3 business days"
+              list="processing-time-suggestions"
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="processingTime">Processing Time *</Label>
-              <Input
-                id="processingTime"
-                value={formData.processingTime || ''}
-                onChange={(e) => set('processingTime', e.target.value)}
-                placeholder="e.g., 2-3 business days"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="rating">Rating (0–5)</Label>
-              <Input
-                id="rating"
-                type="number"
-                min="0"
-                max="5"
-                step="0.1"
-                value={formData.rating ?? 4.0}
-                onChange={(e) => set('rating', parseFloat(e.target.value) || 4.0)}
-              />
-            </div>
+            <datalist id="processing-time-suggestions">
+              <option value="1 business day" />
+              <option value="2 business days" />
+              <option value="3 business days" />
+              <option value="1-2 business days" />
+              <option value="2-3 business days" />
+              <option value="3-5 business days" />
+              <option value="5-7 business days" />
+              <option value="Same day" />
+            </datalist>
           </div>
 
           <div className="space-y-2">
@@ -96,7 +83,17 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
               value={formData.fees || ''}
               onChange={(e) => set('fees', e.target.value)}
               placeholder="e.g., KES 15,000 + 1.5% of bond value"
+              list="fees-suggestions"
             />
+            <datalist id="fees-suggestions">
+              <option value="1% of bond value" />
+              <option value="1.5% of bond value" />
+              <option value="2% of bond value" />
+              <option value="KES 5,000 + 1% of bond value" />
+              <option value="KES 10,000 + 1.5% of bond value" />
+              <option value="KES 15,000 + 1.5% of bond value" />
+              <option value="KES 20,000 + 2% of bond value" />
+            </datalist>
           </div>
 
           <Separator />
@@ -109,7 +106,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
           </Button>
           <Button onClick={onSave} disabled={saving}>
             <CheckCircle className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : editingBank ? 'Update Bank' : 'Add Bank'}
+            {saving ? 'Saving...' : editingBank ? 'Update' : 'Add'}
           </Button>
         </DialogFooter>
       </DialogContent>
