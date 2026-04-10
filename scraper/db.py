@@ -1,5 +1,6 @@
 """Database helper – connects to SQL Server and inserts scraped tenders."""
 
+import json
 import logging
 import pyodbc
 from config import DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD
@@ -151,3 +152,196 @@ def save_tenders(tenders: list[dict]) -> int:
 
     log.info("Inserted %d / %d tenders.", inserted, len(tenders))
     return inserted
+
+
+# ── TenderDocumentDetails table ─────────────────────────────────────────────
+
+_CREATE_DOC_DETAILS_TABLE = """
+IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_NAME = 'TenderDocumentDetails'
+)
+BEGIN
+    CREATE TABLE TenderDocumentDetails (
+        Id                       UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY,
+        TenderId                 UNIQUEIDENTIFIER NOT NULL,
+
+        -- Section 1: Key Requirements
+        BidBondAmount            NVARCHAR(200),
+        BidBondForm              NVARCHAR(200),
+        BidBondValidity          NVARCHAR(100),
+        BidValidityPeriod        NVARCHAR(100),
+        SubmissionDeadline       NVARCHAR(200),
+        SubmissionMethod         NVARCHAR(100),
+        PreBidMeetingDate        NVARCHAR(200),
+        PreBidMeetingLink        NVARCHAR(500),
+        ClarificationDeadline    NVARCHAR(200),
+        MandatorySiteVisit       BIT              DEFAULT 0,
+        NumberOfBidCopies        NVARCHAR(50),
+
+        -- Section 2: Financial Qualification Thresholds
+        MinAnnualTurnover        NVARCHAR(200),
+        MinLiquidAssets          NVARCHAR(200),
+        MinSingleContractValue   NVARCHAR(200),
+        MinCombinedContractValue NVARCHAR(200),
+        CashFlowRequirement      NVARCHAR(200),
+        AuditedFinancialsYears   NVARCHAR(100),
+
+        -- Section 3: Key Personnel (JSON array)
+        KeyPersonnel             NVARCHAR(MAX),
+
+        -- Section 4: Key Equipment (JSON array)
+        KeyEquipment             NVARCHAR(MAX),
+
+        -- Raw extracted text for each section
+        KeyRequirementsRaw       NVARCHAR(MAX),
+        FinancialQualificationsRaw NVARCHAR(MAX),
+        KeyPersonnelRaw          NVARCHAR(MAX),
+        KeyEquipmentRaw          NVARCHAR(MAX),
+
+        -- Metadata
+        DocumentParsed           BIT              DEFAULT 0,
+        ParsedDocumentUrl        NVARCHAR(MAX),
+        ParseError               NVARCHAR(MAX),
+        CreatedAt                DATETIME2        DEFAULT GETUTCDATE(),
+        UpdatedAt                DATETIME2        DEFAULT GETUTCDATE(),
+
+        CONSTRAINT FK_TenderDocDetails_ScrapedTenders
+            FOREIGN KEY (TenderId) REFERENCES ScrapedTenders(Id)
+    );
+
+    CREATE UNIQUE INDEX UQ_TenderDocDetails_TenderId
+        ON TenderDocumentDetails (TenderId);
+END
+"""
+
+
+def ensure_doc_details_table():
+    """Create the TenderDocumentDetails table if it does not yet exist."""
+    with get_connection() as conn:
+        conn.execute(_CREATE_DOC_DETAILS_TABLE)
+        conn.commit()
+    log.info("TenderDocumentDetails table ready.")
+
+
+_INSERT_DOC_DETAIL = """
+INSERT INTO TenderDocumentDetails (
+    TenderId,
+    BidBondAmount, BidBondForm, BidBondValidity, BidValidityPeriod,
+    SubmissionDeadline, SubmissionMethod, PreBidMeetingDate, PreBidMeetingLink,
+    ClarificationDeadline, MandatorySiteVisit, NumberOfBidCopies,
+    MinAnnualTurnover, MinLiquidAssets, MinSingleContractValue,
+    MinCombinedContractValue, CashFlowRequirement, AuditedFinancialsYears,
+    KeyPersonnel, KeyEquipment,
+    KeyRequirementsRaw, FinancialQualificationsRaw,
+    KeyPersonnelRaw, KeyEquipmentRaw,
+    DocumentParsed, ParsedDocumentUrl, ParseError
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+"""
+
+_UPDATE_DOC_DETAIL = """
+UPDATE TenderDocumentDetails SET
+    BidBondAmount = ?, BidBondForm = ?, BidBondValidity = ?, BidValidityPeriod = ?,
+    SubmissionDeadline = ?, SubmissionMethod = ?, PreBidMeetingDate = ?, PreBidMeetingLink = ?,
+    ClarificationDeadline = ?, MandatorySiteVisit = ?, NumberOfBidCopies = ?,
+    MinAnnualTurnover = ?, MinLiquidAssets = ?, MinSingleContractValue = ?,
+    MinCombinedContractValue = ?, CashFlowRequirement = ?, AuditedFinancialsYears = ?,
+    KeyPersonnel = ?, KeyEquipment = ?,
+    KeyRequirementsRaw = ?, FinancialQualificationsRaw = ?,
+    KeyPersonnelRaw = ?, KeyEquipmentRaw = ?,
+    DocumentParsed = ?, ParsedDocumentUrl = ?, ParseError = ?,
+    UpdatedAt = GETUTCDATE()
+WHERE TenderId = ?
+"""
+
+
+def _doc_detail_exists(cursor, tender_id: str) -> bool:
+    cursor.execute(
+        "SELECT 1 FROM TenderDocumentDetails WHERE TenderId = ?", tender_id
+    )
+    return cursor.fetchone() is not None
+
+
+def _trunc(val, max_len):
+    """Truncate a string to max_len if needed."""
+    if isinstance(val, str) and len(val) > max_len:
+        return val[:max_len]
+    return val
+
+
+def save_document_details(tender_id: str, parsed: dict) -> bool:
+    """Save parsed document details for a tender. Returns True if saved/updated."""
+    personnel_json = json.dumps(parsed.get("key_personnel", []), default=str)
+    equipment_json = json.dumps(parsed.get("key_equipment", []), default=str)
+
+    params = (
+        _trunc(parsed.get("bid_bond_amount"), 200),
+        _trunc(parsed.get("bid_bond_form"), 200),
+        _trunc(parsed.get("bid_bond_validity"), 100),
+        _trunc(parsed.get("bid_validity_period"), 100),
+        _trunc(parsed.get("submission_deadline"), 200),
+        _trunc(parsed.get("submission_method"), 100),
+        _trunc(parsed.get("pre_bid_meeting_date"), 200),
+        _trunc(parsed.get("pre_bid_meeting_link"), 500),
+        _trunc(parsed.get("clarification_deadline"), 200),
+        parsed.get("mandatory_site_visit", False),
+        _trunc(parsed.get("number_of_bid_copies"), 50),
+        _trunc(parsed.get("min_annual_turnover"), 200),
+        _trunc(parsed.get("min_liquid_assets"), 200),
+        _trunc(parsed.get("min_single_contract_value"), 200),
+        _trunc(parsed.get("min_combined_contract_value"), 200),
+        _trunc(parsed.get("cash_flow_requirement"), 200),
+        _trunc(parsed.get("audited_financials_years"), 100),
+        personnel_json,
+        equipment_json,
+        parsed.get("key_requirements_raw"),
+        parsed.get("financial_qualifications_raw"),
+        parsed.get("key_personnel_raw"),
+        parsed.get("key_equipment_raw"),
+        parsed.get("document_parsed", False),
+        parsed.get("parsed_document_url"),
+        _trunc(parsed.get("parse_error"), 2000),
+    )
+
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            if _doc_detail_exists(cur, tender_id):
+                cur.execute(_UPDATE_DOC_DETAIL, *params, tender_id)
+            else:
+                cur.execute(_INSERT_DOC_DETAIL, tender_id, *params)
+            conn.commit()
+        return True
+    except Exception:
+        log.exception("Failed to save document details for tender %s", tender_id)
+        return False
+
+
+def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> list[dict]:
+    """Return tenders that have a DocumentUrl but no parsed document details yet.
+    
+    Skips tenders that already have a TenderDocumentDetails row (even if parsing failed),
+    so failed parses are not retried automatically. Use --tender-id to retry a specific one.
+    """
+    sql = """
+    SELECT TOP (?) t.Id, t.Source, t.Title, t.DocumentUrl
+    FROM ScrapedTenders t
+    LEFT JOIN TenderDocumentDetails d ON d.TenderId = t.Id
+    WHERE t.DocumentUrl IS NOT NULL
+      AND t.DocumentUrl <> ''
+      AND d.Id IS NULL
+    """
+    params = [limit]
+    if source:
+        sql += "      AND t.Source = ?\n"
+        params.append(source)
+    sql += "    ORDER BY t.CreatedAt DESC\n"
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        rows = cur.fetchall()
+    return [
+        {"id": str(row[0]), "source": row[1], "title": row[2], "document_url": row[3]}
+        for row in rows
+    ]

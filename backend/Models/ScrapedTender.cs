@@ -52,6 +52,26 @@ public class ScrapedTender
     [MaxLength(100)]
     public string? ProcurementMethod { get; set; }
 
+    [MaxLength(200)]
+    public string? SubmissionMethodName { get; set; }
+
+    public int? BidValidityDays { get; set; }
+
+    [MaxLength(500)]
+    public string? Venue { get; set; }
+
+    [MaxLength(200)]
+    public string? PeEmail { get; set; }
+
+    [MaxLength(100)]
+    public string? PePhone { get; set; }
+
+    [MaxLength(500)]
+    public string? PeAddress { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TenderFee { get; set; }
+
     public DateTime? StartDate { get; set; }
 
     public DateTime? EndDate { get; set; }

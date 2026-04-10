@@ -12,8 +12,9 @@ import logging
 import sys
 import time
 
-from db import ensure_table, save_tenders
+from db import ensure_table, ensure_doc_details_table, save_tenders
 from scrapers import scrape_afa, scrape_kra, scrape_egp
+from parse_documents import run_batch as parse_batch
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,6 +37,7 @@ def run(sources: list[str] | None = None):
     start = time.time()
 
     ensure_table()
+    ensure_doc_details_table()
 
     total_inserted = 0
     for key in targets:
@@ -54,6 +56,14 @@ def run(sources: list[str] | None = None):
 
     elapsed = time.time() - start
     log.info("Scrape run complete. %d new tenders total (%.1fs).", total_inserted, elapsed)
+
+    # ── Parse document PDFs for any tenders that still need it ──
+    log.info("── Document Parsing ──")
+    try:
+        parse_batch(limit=200)
+    except Exception:
+        log.exception("Document parsing failed.")
+
     return total_inserted
 
 

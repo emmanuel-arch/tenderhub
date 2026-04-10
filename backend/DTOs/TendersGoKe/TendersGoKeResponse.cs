@@ -66,6 +66,9 @@ public class TendersGoKeTenderDto
 
     [JsonPropertyName("documents")]
     public List<TendersGoKeDocumentDto> Documents { get; set; } = [];
+
+    [JsonPropertyName("submission_methods")]
+    public List<TendersGoKeSubmissionMethodDto> SubmissionMethods { get; set; } = [];
 }
 
 public class TendersGoKePeDto
@@ -75,6 +78,21 @@ public class TendersGoKePeDto
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
+
+    [JsonPropertyName("telephone")]
+    public string? Telephone { get; set; }
+
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    [JsonPropertyName("physical_address")]
+    public string? PhysicalAddress { get; set; }
+
+    [JsonPropertyName("postal_address")]
+    public string? PostalAddress { get; set; }
+
+    [JsonPropertyName("city")]
+    public string? City { get; set; }
 }
 
 public class TendersGoKeNamedDto
@@ -84,6 +102,21 @@ public class TendersGoKeNamedDto
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+}
+
+public class TendersGoKeSubmissionMethodDto
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+
+    [JsonPropertyName("code")]
+    public string? Code { get; set; }
 }
 
 public class TendersGoKeDocumentDto

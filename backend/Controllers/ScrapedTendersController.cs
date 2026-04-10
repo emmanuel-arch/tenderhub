@@ -66,7 +66,17 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
     public async Task<IActionResult> GetById(Guid id)
     {
         var t = await db.ScrapedTenders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-        return t is null ? NotFound() : Ok(ToDto(t));
+        if (t is null) return NotFound();
+
+        var dto = ToDto(t);
+
+        // Include document details if available
+        var docDetail = await db.TenderDocumentDetails.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.TenderId == id);
+        if (docDetail is not null)
+            dto.DocumentDetails = ToDocDetailDto(docDetail);
+
+        return Ok(dto);
     }
 
     [HttpGet("sources")]
@@ -110,8 +120,52 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
         TenderFee = t.TenderFee,
         DocumentReleaseDate = t.DocumentReleaseDate,
         ProcurementMethod = t.ProcurementMethod,
+        SubmissionMethodName = t.SubmissionMethodName,
+        BidValidityDays = t.BidValidityDays,
+        Venue = t.Venue,
+        PeEmail = t.PeEmail,
+        PePhone = t.PePhone,
+        PeAddress = t.PeAddress,
+        TenderFee = t.TenderFee,
         StartDate = t.StartDate,
         EndDate = t.EndDate,
         CreatedAt = t.CreatedAt
+    };
+
+    [HttpGet("{id:guid}/document-details")]
+    [ProducesResponseType(typeof(TenderDocumentDetailDto), 200)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> GetDocumentDetails(Guid id)
+    {
+        var detail = await db.TenderDocumentDetails.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.TenderId == id);
+        return detail is null ? NotFound() : Ok(ToDocDetailDto(detail));
+    }
+
+    private static TenderDocumentDetailDto ToDocDetailDto(TenderDocumentDetail d) => new()
+    {
+        Id = d.Id,
+        TenderId = d.TenderId,
+        BidBondAmount = d.BidBondAmount,
+        BidBondForm = d.BidBondForm,
+        BidBondValidity = d.BidBondValidity,
+        BidValidityPeriod = d.BidValidityPeriod,
+        SubmissionDeadline = d.SubmissionDeadline,
+        SubmissionMethod = d.SubmissionMethod,
+        PreBidMeetingDate = d.PreBidMeetingDate,
+        PreBidMeetingLink = d.PreBidMeetingLink,
+        ClarificationDeadline = d.ClarificationDeadline,
+        MandatorySiteVisit = d.MandatorySiteVisit,
+        NumberOfBidCopies = d.NumberOfBidCopies,
+        MinAnnualTurnover = d.MinAnnualTurnover,
+        MinLiquidAssets = d.MinLiquidAssets,
+        MinSingleContractValue = d.MinSingleContractValue,
+        MinCombinedContractValue = d.MinCombinedContractValue,
+        CashFlowRequirement = d.CashFlowRequirement,
+        AuditedFinancialsYears = d.AuditedFinancialsYears,
+        KeyPersonnel = d.KeyPersonnel,
+        KeyEquipment = d.KeyEquipment,
+        DocumentParsed = d.DocumentParsed,
+        ParseError = d.ParseError,
     };
 }

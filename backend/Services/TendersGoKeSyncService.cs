@@ -14,7 +14,7 @@ public class TendersGoKeSyncService(
     private const string Source = "tenders.go.ke";
     private const string BaseUrl = "https://tenders.go.ke/api/active-tenders";
     private const string BaseWebUrl = "https://tenders.go.ke";
-    private const int TenderDocumentTypeId = 1;
+    private const int TenderNoticeDocTypeId = 7;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -85,11 +85,12 @@ public class TendersGoKeSyncService(
                 var publishedAt = ParseDate(t.PublishedAt);
                 var openingDate = ParseDate(t.OpeningDate);
                 var bidBondRequired = (t.BidSecurityValue ?? 0) > 0 || (t.BidSecurityPercent ?? 0) > 0;
-                var tenderDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderDocumentTypeId)
+                var noticeDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderNoticeDocTypeId)
                              ?? t.Documents.FirstOrDefault();
-                var documentUrl = tenderDoc?.Url is { } u
+                var documentUrl = noticeDoc?.Url is { } u
                     ? (u.StartsWith("http") ? u : BaseWebUrl + u)
                     : null;
+                var tenderNoticeUrl = documentUrl;
 
                 // Skip expired tenders entirely
                 if (closeAt.HasValue && closeAt.Value < now) continue;
@@ -101,12 +102,12 @@ public class TendersGoKeSyncService(
                 if (existing is not null)
                 {
                     existing.ExternalId = externalId; // keep ExternalId in sync
-                    existing.Title = t.Title;
+                    existing.Title = t.Title ?? "";
                     existing.TenderNumber = t.TenderRef;
                     existing.ProcuringEntity = t.Pe?.Name;
                     existing.Deadline = closeAt;
-                    existing.SubCategory = t.ProcurementCategory?.Name;
-                    existing.ProcurementMethod = t.ProcurementMethod?.Name;
+                    existing.SubCategory = t.ProcurementCategory?.Name ?? t.ProcurementCategory?.Title;
+                    existing.ProcurementMethod = t.ProcurementMethod?.Name ?? t.ProcurementMethod?.Title;
                     existing.BidBondRequired = bidBondRequired;
                     existing.BidBondAmount = t.BidSecurityValue ?? 0;
                     existing.TenderFee = t.TenderFee;
@@ -114,6 +115,7 @@ public class TendersGoKeSyncService(
                     existing.StartDate = publishedAt;
                     existing.EndDate = openingDate;
                     existing.DocumentUrl = documentUrl;
+                    existing.TenderNoticeUrl = tenderNoticeUrl;
                     existing.UpdatedAt = now;
                     updated++;
                 }
@@ -124,13 +126,13 @@ public class TendersGoKeSyncService(
                         Id = Guid.NewGuid(),
                         Source = Source,
                         ExternalId = externalId,
-                        Title = t.Title,
+                        Title = t.Title ?? "",
                         TenderNumber = t.TenderRef,
                         ProcuringEntity = t.Pe?.Name,
                         Deadline = closeAt,
                         Category = "Government",
-                        SubCategory = t.ProcurementCategory?.Name,
-                        ProcurementMethod = t.ProcurementMethod?.Name,
+                        SubCategory = t.ProcurementCategory?.Name ?? t.ProcurementCategory?.Title,
+                        ProcurementMethod = t.ProcurementMethod?.Name ?? t.ProcurementMethod?.Title,
                         BidBondRequired = bidBondRequired,
                         BidBondAmount = t.BidSecurityValue ?? 0,
                         TenderFee = t.TenderFee,
@@ -138,6 +140,7 @@ public class TendersGoKeSyncService(
                         StartDate = publishedAt,
                         EndDate = openingDate,
                         DocumentUrl = documentUrl,
+                        TenderNoticeUrl = tenderNoticeUrl,
                         CreatedAt = now,
                         UpdatedAt = now
                     };

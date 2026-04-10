@@ -20,9 +20,19 @@ public class ScrapedTenderDto
     public decimal? TenderFee { get; set; }
     public DateTime? DocumentReleaseDate { get; set; }
     public string? ProcurementMethod { get; set; }
+    public string? SubmissionMethodName { get; set; }
+    public int? BidValidityDays { get; set; }
+    public string? Venue { get; set; }
+    public string? PeEmail { get; set; }
+    public string? PePhone { get; set; }
+    public string? PeAddress { get; set; }
+    public decimal TenderFee { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Included when fetching a single tender by ID
+    public TenderDocumentDetailDto? DocumentDetails { get; set; }
 }
 
 public class ScrapedTenderListParams
