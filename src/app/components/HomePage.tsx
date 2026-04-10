@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isAdmin } = useAuth();
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -30,7 +30,7 @@ export function HomePage() {
             {isAuthenticated ? (
               <>
                 <span className="text-sm text-slate-600">{user?.name}</span>
-                <Button size="sm" variant="outline" onClick={() => navigate('/dashboard')}>Dashboard</Button>
+                <Button size="sm" variant="outline" onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}>Dashboard</Button>
               </>
             ) : (
               <>

@@ -107,6 +107,7 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
         TenderNoticeUrl = t.TenderNoticeUrl,
         BidBondRequired = t.BidBondRequired,
         BidBondAmount = t.BidBondAmount,
+        TenderFee = t.TenderFee,
         DocumentReleaseDate = t.DocumentReleaseDate,
         ProcurementMethod = t.ProcurementMethod,
         StartDate = t.StartDate,

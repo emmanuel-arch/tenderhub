@@ -7,7 +7,6 @@ import {
   CheckCircle,
   XCircle,
   Download,
-  Bell,
   Bookmark,
   TrendingUp,
   Building2,
@@ -98,29 +97,6 @@ export function Dashboard() {
     }
   };
 
-  const notifications = [
-    {
-      id: '1',
-      title: 'Bid Bond Approved',
-      message: 'Your bid bond for KNH/PROC/2026/001 has been approved',
-      time: '2 hours ago',
-      type: 'success'
-    },
-    {
-      id: '2',
-      title: 'Tender Deadline Approaching',
-      message: 'Supply of Office Furniture deadline is in 5 days',
-      time: '5 hours ago',
-      type: 'warning'
-    },
-    {
-      id: '3',
-      title: 'New Tender Available',
-      message: '3 new tenders matching your profile',
-      time: '1 day ago',
-      type: 'info'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -235,7 +211,6 @@ export function Dashboard() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           {/* Applications Tab */}
@@ -536,31 +511,6 @@ export function Dashboard() {
             )}
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-4">
-            {notifications.map((notification) => (
-              <Card key={notification.id}>
-                <CardContent className="py-4">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      notification.type === 'success' ? 'bg-green-100' :
-                      notification.type === 'warning' ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      <Bell className={`w-5 h-5 ${
-                        notification.type === 'success' ? 'text-green-800' :
-                        notification.type === 'warning' ? 'text-green-700' : 'text-blue-900'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold mb-1">{notification.title}</div>
-                      <div className="text-sm text-slate-600 mb-1">{notification.message}</div>
-                      <div className="text-xs text-slate-500">{notification.time}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
         </Tabs>
       </main>
     </div>

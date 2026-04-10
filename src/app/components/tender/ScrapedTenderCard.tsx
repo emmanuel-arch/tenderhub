@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Calendar, Building2, Clock, ExternalLink, Download, FileText, Tag, Eye, Bookmark } from 'lucide-react';
+import { Calendar, Building2, Clock, Download, FileText, Tag, Eye, Bookmark } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -131,17 +131,6 @@ export function ScrapedTenderCard({ tender }: Props) {
             <Eye className="w-3.5 h-3.5" />
             View Details
           </Button>
-          {tender.tenderNoticeUrl && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => window.open(toAbsoluteUrl(tender.tenderNoticeUrl!), '_blank', 'noopener,noreferrer')}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Tender Notice
-            </Button>
-          )}
           {tender.documentUrl && (
             <Button
               size="sm"

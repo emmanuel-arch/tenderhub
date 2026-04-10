@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -47,8 +47,8 @@ export function TenderDetails() {
   const [manualBondAmount, setManualBondAmount] = useState('');
 
   // Extra scraped tender fields we want to keep
-  const [tenderNoticeUrl, setTenderNoticeUrl] = useState<string | null>(null);
   const [procurementMethod, setProcurementMethod] = useState<string | null>(null);
+  const [tenderFee, setTenderFee] = useState<number | null>(null);
 
   const isScraped = id?.startsWith('s-');
 
@@ -62,8 +62,8 @@ export function TenderDetails() {
 
       if (stateScraped) {
         setTender(scrapedToTender(stateScraped));
-        setTenderNoticeUrl(stateScraped.tenderNoticeUrl ?? null);
         setProcurementMethod(stateScraped.procurementMethod ?? null);
+        setTenderFee(stateScraped.tenderFee ?? null);
         setLoading(false);
         return;
       }
@@ -74,8 +74,8 @@ export function TenderDetails() {
           const realId = id.slice(2);
           const scraped = await scrapedTendersApi.getById(realId);
           setTender(scrapedToTender(scraped));
-          setTenderNoticeUrl(scraped.tenderNoticeUrl ?? null);
           setProcurementMethod(scraped.procurementMethod ?? null);
+          setTenderFee(scraped.tenderFee ?? null);
         } catch {
           setTender(null);
         } finally {
@@ -253,6 +253,17 @@ export function TenderDetails() {
                       <div className="font-semibold text-slate-900">{tender.procuringEntity || '—'}</div>
                     </div>
                   </div>
+                  {tenderFee !== null && tenderFee > 0 && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-green-800" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide">Tender Fee</div>
+                        <div className="font-semibold text-slate-900">{formatCurrency(tenderFee)}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -283,16 +294,6 @@ export function TenderDetails() {
                     >
                       <Download className="w-4 h-4" />
                       Download Tender Document
-                    </Button>
-                  )}
-                  {tenderNoticeUrl && (
-                    <Button
-                      variant="outline"
-                      className="gap-2"
-                      onClick={() => window.open(tenderNoticeUrl, '_blank', 'noopener,noreferrer')}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      View Tender Notice
                     </Button>
                   )}
                 </div>

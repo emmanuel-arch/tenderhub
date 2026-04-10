@@ -44,6 +44,9 @@ public class ScrapedTender
     [Column(TypeName = "decimal(18,2)")]
     public decimal BidBondAmount { get; set; }
 
+    [Column("tender_fee", TypeName = "decimal(18,2)")]
+    public decimal? TenderFee { get; set; }
+
     public DateTime? DocumentReleaseDate { get; set; }
 
     [MaxLength(100)]

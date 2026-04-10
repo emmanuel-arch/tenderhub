@@ -14,7 +14,7 @@ public class TendersGoKeSyncService(
     private const string Source = "tenders.go.ke";
     private const string BaseUrl = "https://tenders.go.ke/api/active-tenders";
     private const string BaseWebUrl = "https://tenders.go.ke";
-    private const int TenderNoticeDocTypeId = 7;
+    private const int TenderDocumentTypeId = 1;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -85,12 +85,11 @@ public class TendersGoKeSyncService(
                 var publishedAt = ParseDate(t.PublishedAt);
                 var openingDate = ParseDate(t.OpeningDate);
                 var bidBondRequired = (t.BidSecurityValue ?? 0) > 0 || (t.BidSecurityPercent ?? 0) > 0;
-                var noticeDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderNoticeDocTypeId)
+                var tenderDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderDocumentTypeId)
                              ?? t.Documents.FirstOrDefault();
-                var documentUrl = noticeDoc?.Url is { } u
+                var documentUrl = tenderDoc?.Url is { } u
                     ? (u.StartsWith("http") ? u : BaseWebUrl + u)
                     : null;
-                var tenderNoticeUrl = documentUrl;
 
                 // Skip expired tenders entirely
                 if (closeAt.HasValue && closeAt.Value < now) continue;
@@ -110,11 +109,11 @@ public class TendersGoKeSyncService(
                     existing.ProcurementMethod = t.ProcurementMethod?.Name;
                     existing.BidBondRequired = bidBondRequired;
                     existing.BidBondAmount = t.BidSecurityValue ?? 0;
+                    existing.TenderFee = t.TenderFee;
                     existing.DocumentReleaseDate = publishedAt;
                     existing.StartDate = publishedAt;
                     existing.EndDate = openingDate;
                     existing.DocumentUrl = documentUrl;
-                    existing.TenderNoticeUrl = tenderNoticeUrl;
                     existing.UpdatedAt = now;
                     updated++;
                 }
@@ -134,11 +133,11 @@ public class TendersGoKeSyncService(
                         ProcurementMethod = t.ProcurementMethod?.Name,
                         BidBondRequired = bidBondRequired,
                         BidBondAmount = t.BidSecurityValue ?? 0,
+                        TenderFee = t.TenderFee,
                         DocumentReleaseDate = publishedAt,
                         StartDate = publishedAt,
                         EndDate = openingDate,
                         DocumentUrl = documentUrl,
-                        TenderNoticeUrl = tenderNoticeUrl,
                         CreatedAt = now,
                         UpdatedAt = now
                     };

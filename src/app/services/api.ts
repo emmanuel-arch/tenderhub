@@ -311,6 +311,7 @@ export interface ScrapedTenderDto {
   tenderNoticeUrl?: string;
   bidBondRequired: boolean;
   bidBondAmount: number;
+  tenderFee?: number;
   documentReleaseDate?: string;
   procurementMethod?: string;
   startDate?: string;
