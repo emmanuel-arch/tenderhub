@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Calendar, Building2, Clock, Download, FileText, Tag, Eye, Bookmark, ShieldCheck } from 'lucide-react';
+import { Calendar, Building2, Clock, Download, FileText, Eye, Bookmark, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -68,27 +68,25 @@ export function ScrapedTenderCard({ tender }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {/* Info row */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-          {tender.tenderNumber && (
-            <span className="flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5" />
-              {tender.tenderNumber}
-            </span>
-          )}
-          {tender.deadline && (
-            <span className={`flex items-center gap-1 ${isExpired ? 'text-red-600' : isUrgent ? 'text-green-700 font-medium' : ''}`}>
-              <Calendar className="w-3.5 h-3.5" />
-              {isExpired ? 'Expired' : `Deadline: ${formatDate(tender.deadline)}`}
-              {isUrgent && !isExpired && (
-                <Badge variant="destructive" className="ml-1 text-xs py-0 px-1.5">
-                  <Clock className="w-3 h-3 mr-0.5" />
-                  {daysRemaining}d
-                </Badge>
-              )}
-            </span>
-          )}
-        </div>
+        {tender.tenderNumber && (
+          <div className="flex items-center gap-1 text-sm text-slate-500">
+            <FileText className="w-3.5 h-3.5" />
+            {tender.tenderNumber}
+          </div>
+        )}
+
+        {tender.deadline && (
+          <div className={`flex items-center gap-1 text-sm ${isExpired ? 'text-red-600' : isUrgent ? 'text-green-700 font-medium' : 'text-slate-500'}`}>
+            <Calendar className="w-3.5 h-3.5" />
+            {isExpired ? 'Expired' : `Deadline: ${formatDate(tender.deadline)}`}
+            {isUrgent && !isExpired && (
+              <Badge variant="destructive" className="ml-1 text-xs py-0 px-1.5">
+                <Clock className="w-3 h-3 mr-0.5" />
+                {daysRemaining}d
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Category */}
         {tender.subCategory && (
