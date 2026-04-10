@@ -14,6 +14,7 @@ public class TendersGoKeSyncService(
     private const string Source = "tenders.go.ke";
     private const string BaseUrl = "https://tenders.go.ke/api/active-tenders";
     private const string BaseWebUrl = "https://tenders.go.ke";
+    private const int TenderDocumentTypeId = 1;
     private const int TenderNoticeDocTypeId = 7;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -85,12 +86,27 @@ public class TendersGoKeSyncService(
                 var publishedAt = ParseDate(t.PublishedAt);
                 var openingDate = ParseDate(t.OpeningDate);
                 var bidBondRequired = (t.BidSecurityValue ?? 0) > 0 || (t.BidSecurityPercent ?? 0) > 0;
-                var noticeDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderNoticeDocTypeId)
-                             ?? t.Documents.FirstOrDefault();
-                var documentUrl = noticeDoc?.Url is { } u
-                    ? (u.StartsWith("http") ? u : BaseWebUrl + u)
-                    : null;
-                var tenderNoticeUrl = documentUrl;
+
+                // Tender Document (type 1) = full bid document for parsing
+                var tenderDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderDocumentTypeId);
+                // Tender Notice (type 7) = short notice document
+                var noticeDoc = t.Documents.FirstOrDefault(d => d.DocumentTypeId == TenderNoticeDocTypeId);
+
+                string? ResolveUrl(TendersGoKeDocumentDto? doc) =>
+                    doc?.Url is { } raw ? (raw.StartsWith("http") ? raw : BaseWebUrl + raw) : null;
+
+                // DocumentUrl should be the actual bid document; fall back to notice, then any doc
+                var documentUrl = ResolveUrl(tenderDoc)
+                                ?? ResolveUrl(noticeDoc)
+                                ?? ResolveUrl(t.Documents.FirstOrDefault());
+                // TenderNoticeUrl should be the notice; fall back to any doc
+                var tenderNoticeUrl = ResolveUrl(noticeDoc)
+                                   ?? ResolveUrl(t.Documents.FirstOrDefault());
+                var submissionMethod = t.SubmissionMethods.FirstOrDefault()?.Title;
+                var venue = string.IsNullOrWhiteSpace(t.Venue) || t.Venue == "0" ? null : t.Venue;
+                var peAddress = string.Join(", ",
+                    new[] { t.Pe?.PhysicalAddress, t.Pe?.PostalAddress, t.Pe?.City }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
 
                 // Skip expired tenders entirely
                 if (closeAt.HasValue && closeAt.Value < now) continue;
@@ -110,12 +126,18 @@ public class TendersGoKeSyncService(
                     existing.ProcurementMethod = t.ProcurementMethod?.Name ?? t.ProcurementMethod?.Title;
                     existing.BidBondRequired = bidBondRequired;
                     existing.BidBondAmount = t.BidSecurityValue ?? 0;
-                    existing.TenderFee = t.TenderFee;
                     existing.DocumentReleaseDate = publishedAt;
                     existing.StartDate = publishedAt;
                     existing.EndDate = openingDate;
                     existing.DocumentUrl = documentUrl;
                     existing.TenderNoticeUrl = tenderNoticeUrl;
+                    existing.SubmissionMethodName = submissionMethod;
+                    existing.BidValidityDays = t.ValidityInDays;
+                    existing.Venue = venue;
+                    existing.PeEmail = t.Pe?.Email;
+                    existing.PePhone = t.Pe?.Telephone;
+                    existing.PeAddress = string.IsNullOrEmpty(peAddress) ? null : peAddress;
+                    existing.TenderFee = t.TenderFee ?? 0;
                     existing.UpdatedAt = now;
                     updated++;
                 }
@@ -135,12 +157,18 @@ public class TendersGoKeSyncService(
                         ProcurementMethod = t.ProcurementMethod?.Name ?? t.ProcurementMethod?.Title,
                         BidBondRequired = bidBondRequired,
                         BidBondAmount = t.BidSecurityValue ?? 0,
-                        TenderFee = t.TenderFee,
                         DocumentReleaseDate = publishedAt,
                         StartDate = publishedAt,
                         EndDate = openingDate,
                         DocumentUrl = documentUrl,
                         TenderNoticeUrl = tenderNoticeUrl,
+                        SubmissionMethodName = submissionMethod,
+                        BidValidityDays = t.ValidityInDays,
+                        Venue = venue,
+                        PeEmail = t.Pe?.Email,
+                        PePhone = t.Pe?.Telephone,
+                        PeAddress = string.IsNullOrEmpty(peAddress) ? null : peAddress,
+                        TenderFee = t.TenderFee ?? 0,
                         CreatedAt = now,
                         UpdatedAt = now
                     };
