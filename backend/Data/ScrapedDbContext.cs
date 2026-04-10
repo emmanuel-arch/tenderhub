@@ -30,8 +30,8 @@ public class ScrapedDbContext(DbContextOptions<ScrapedDbContext> options) : DbCo
                   .HasDatabaseName("UQ_TenderDocDetails_TenderId");
 
             entity.HasOne(e => e.Tender)
-                  .WithMany()
-                  .HasForeignKey(e => e.TenderId)
+                  .WithOne(t => t.DocumentDetail)
+                  .HasForeignKey<TenderDocumentDetail>(e => e.TenderId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
     }

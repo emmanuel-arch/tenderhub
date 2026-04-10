@@ -76,4 +76,7 @@ public class ScrapedTender
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    // Navigation
+    public TenderDocumentDetail? DocumentDetail { get; set; }
 }

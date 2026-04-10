@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Calendar, Building2, Clock, Download, FileText, Tag, Eye, Bookmark } from 'lucide-react';
+import { Calendar, Building2, Clock, Download, FileText, Tag, Eye, Bookmark, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -96,22 +96,18 @@ export function ScrapedTenderCard({ tender }: Props) {
           )}
         </div>
 
-        {/* Badges */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Badges + Bid Bond */}
+        <div className="flex flex-wrap items-center gap-1.5">
           {tender.subCategory && (
             <Badge variant="outline" className="capitalize text-xs">
               {tender.subCategory}
             </Badge>
           )}
-          {tender.bidBondRequired && (
-            <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200 text-xs">
-              Bid Bond Required
-            </Badge>
-          )}
-          {tender.bidBondAmount > 0 && (
-            <Badge variant="outline" className="bg-slate-50 text-slate-700 text-xs">
-              KES {tender.bidBondAmount.toLocaleString()}
-            </Badge>
+          {(tender.documentDetails?.bidBondAmount || tender.bidBondAmount > 0) && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-red-600">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Bid Bond: {tender.documentDetails?.bidBondAmount ?? `KES ${tender.bidBondAmount.toLocaleString()}`}
+            </span>
           )}
         </div>
 

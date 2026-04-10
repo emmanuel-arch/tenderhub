@@ -30,6 +30,12 @@ public class TenderDocumentDetailDto
     public string? KeyPersonnel { get; set; }
     public string? KeyEquipment { get; set; }
 
+    // Raw section text (fallback when JSON arrays are empty)
+    public string? KeyRequirementsRaw { get; set; }
+    public string? FinancialQualificationsRaw { get; set; }
+    public string? KeyPersonnelRaw { get; set; }
+    public string? KeyEquipmentRaw { get; set; }
+
     // Metadata
     public bool DocumentParsed { get; set; }
     public string? ParseError { get; set; }

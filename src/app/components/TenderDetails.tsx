@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, Download, Calendar, Building2, FileText, AlertCircle, CheckCircle, Loader2, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +10,28 @@ import { Label } from './ui/label';
 import { Separator } from './ui/separator';
 import { Tender } from '../data/mockData';
 import { fetchTenderById } from '../services/tenderService';
-import { scrapedTendersApi, type ScrapedTenderDto } from '../services/api';
+import { scrapedTendersApi, type ScrapedTenderDto, type TenderDocumentDetailDto } from '../services/api';
+
+function DetailItem({
+  icon, bg, label, value, children,
+}: {
+  icon: React.ReactNode;
+  bg: string;
+  label: string;
+  value?: string | null;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center shrink-0`}>{icon}</div>
+      <div>
+        <div className="text-xs text-slate-500 uppercase tracking-wide">{label}</div>
+        <div className="font-semibold text-slate-900">{value || '—'}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function scrapedToTender(s: ScrapedTenderDto): Tender {
   return {
@@ -49,6 +70,7 @@ export function TenderDetails() {
   // Extra scraped tender fields we want to keep
   const [procurementMethod, setProcurementMethod] = useState<string | null>(null);
   const [tenderFee, setTenderFee] = useState<number | null>(null);
+  const [documentDetails, setDocumentDetails] = useState<TenderDocumentDetailDto | null>(null);
 
   const isScraped = id?.startsWith('s-');
 
@@ -64,6 +86,15 @@ export function TenderDetails() {
         setTender(scrapedToTender(stateScraped));
         setProcurementMethod(stateScraped.procurementMethod ?? null);
         setTenderFee(stateScraped.tenderFee ?? null);
+        setDocumentDetails(stateScraped.documentDetails ?? null);
+        // If state doesn't have document details yet, fetch the full record
+        if (!stateScraped.documentDetails) {
+          try {
+            const realId = id.slice(2);
+            const full = await scrapedTendersApi.getById(realId);
+            setDocumentDetails(full.documentDetails ?? null);
+          } catch { /* ignore */ }
+        }
         setLoading(false);
         return;
       }
@@ -76,6 +107,7 @@ export function TenderDetails() {
           setTender(scrapedToTender(scraped));
           setProcurementMethod(scraped.procurementMethod ?? null);
           setTenderFee(scraped.tenderFee ?? null);
+          setDocumentDetails(scraped.documentDetails ?? null);
         } catch {
           setTender(null);
         } finally {
@@ -210,34 +242,16 @@ export function TenderDetails() {
               <CardContent className="space-y-6">
                 {/* Key Details Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
+                  <DetailItem icon={<FileText className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Tender Number" value={tender.tenderNumber} />
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-blue-900" />
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500 uppercase tracking-wide">Tender Number</div>
-                      <div className="font-semibold text-slate-900">{tender.tenderNumber || '—'}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      daysRemaining !== null && daysRemaining <= 7
-                        ? 'bg-red-100'
-                        : 'bg-green-100'
-                    }`}>
-                      <Calendar className={`w-5 h-5 ${
-                        daysRemaining !== null && daysRemaining <= 7
-                          ? 'text-red-600'
-                          : 'text-green-800'
-                      }`} />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${daysRemaining !== null && daysRemaining <= 7 ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <Calendar className={`w-5 h-5 ${daysRemaining !== null && daysRemaining <= 7 ? 'text-red-600' : 'text-green-800'}`} />
                     </div>
                     <div>
                       <div className="text-xs text-slate-500 uppercase tracking-wide">Deadline</div>
                       <div className="font-semibold text-slate-900">{formatDate(tender.deadline)}</div>
                       {daysRemaining !== null && daysRemaining > 0 && (
-                        <span className={`text-xs ${daysRemaining <= 7 ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
-                          {daysRemaining} days remaining
-                        </span>
+                        <span className={`text-xs ${daysRemaining <= 7 ? 'text-red-600 font-medium' : 'text-slate-500'}`}>{daysRemaining} days remaining</span>
                       )}
                       {daysRemaining !== null && daysRemaining <= 0 && (
                         <span className="text-xs text-red-600 font-medium">Expired</span>
@@ -253,17 +267,117 @@ export function TenderDetails() {
                       <div className="font-semibold text-slate-900">{tender.procuringEntity || '—'}</div>
                     </div>
                   </div>
-                  {tenderFee !== null && tenderFee > 0 && (
+                  <DetailItem icon={<FileText className="w-5 h-5 text-green-800" />} bg="bg-green-100" label="Tender Fee" value={tenderFee !== null && tenderFee > 0 ? formatCurrency(tenderFee) : null} />
+                </div>
+
+                {/* Document Details — parsed from bid document */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">Tender Requirements</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
+                    <DetailItem icon={<Calendar className="w-5 h-5 text-orange-700" />} bg="bg-orange-100" label="Submission Deadline" value={documentDetails?.submissionDeadline} />
+                    <DetailItem icon={<AlertCircle className="w-5 h-5 text-green-700" />} bg="bg-green-100" label="Bid Bond Amount" value={documentDetails?.bidBondAmount} />
+                    <DetailItem icon={<FileText className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Form" value={documentDetails?.bidBondForm} />
+                    <DetailItem icon={<Calendar className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Validity" value={documentDetails?.bidBondValidity} />
+                    <DetailItem icon={<Calendar className="w-5 h-5 text-slate-600" />} bg="bg-slate-100" label="Bid Validity Period" value={documentDetails?.bidValidityPeriod} />
+                    <DetailItem icon={<FileText className="w-5 h-5 text-slate-600" />} bg="bg-slate-100" label="Submission Method" value={documentDetails?.submissionMethod} />
+                    <DetailItem icon={<FileText className="w-5 h-5 text-slate-600" />} bg="bg-slate-100" label="No. of Bid Copies" value={documentDetails?.numberOfBidCopies} />
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5 text-green-800" />
+                      <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                        <CheckCircle className="w-5 h-5 text-red-700" />
                       </div>
                       <div>
-                        <div className="text-xs text-slate-500 uppercase tracking-wide">Tender Fee</div>
-                        <div className="font-semibold text-slate-900">{formatCurrency(tenderFee)}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide">Mandatory Site Visit</div>
+                        <div className={`font-semibold ${documentDetails?.mandatorySiteVisit ? 'text-red-700' : 'text-slate-900'}`}>
+                          {documentDetails ? (documentDetails.mandatorySiteVisit ? 'Yes' : 'No') : '—'}
+                        </div>
                       </div>
                     </div>
+                    <DetailItem icon={<Calendar className="w-5 h-5 text-purple-700" />} bg="bg-purple-100" label="Pre-Bid Meeting" value={documentDetails?.preBidMeetingDate}>
+                      {documentDetails?.preBidMeetingLink && (
+                        <a href={documentDetails.preBidMeetingLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 underline">Join link</a>
+                      )}
+                    </DetailItem>
+                    <DetailItem icon={<Calendar className="w-5 h-5 text-yellow-700" />} bg="bg-yellow-100" label="Clarification Deadline" value={documentDetails?.clarificationDeadline} />
+                  </div>
+                </div>
+
+                {/* Financial Qualifications */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">Financial Qualifications</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { label: 'Min Annual Turnover', value: documentDetails?.minAnnualTurnover },
+                      { label: 'Min Liquid Assets', value: documentDetails?.minLiquidAssets },
+                      { label: 'Min Single Contract', value: documentDetails?.minSingleContractValue },
+                      { label: 'Min Combined Contracts', value: documentDetails?.minCombinedContractValue },
+                      { label: 'Cash Flow Requirement', value: documentDetails?.cashFlowRequirement },
+                      { label: 'Audited Financials', value: documentDetails?.auditedFinancialsYears ? `${documentDetails.auditedFinancialsYears} years` : null },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                        <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">{label}</div>
+                        <div className="font-semibold text-slate-900">{value || '—'}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {documentDetails?.financialQualificationsRaw && (
+                    <details className="mt-3">
+                      <summary className="text-xs text-blue-700 cursor-pointer select-none">View full qualification criteria</summary>
+                      <p className="mt-2 text-xs text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.financialQualificationsRaw}</p>
+                    </details>
                   )}
+                </div>
+
+                {/* Key Personnel */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">Key Personnel</h3>
+                  {(() => {
+                    let items: { role?: string; qualifications?: string }[] = [];
+                    try { items = JSON.parse(documentDetails?.keyPersonnel || '[]'); } catch { /* ignore */ }
+                    if (items.length > 0) {
+                      return (
+                        <div className="space-y-2">
+                          {items.map((p, i) => (
+                            <div key={i} className="p-3 rounded-lg bg-slate-50 border text-sm">
+                              {p.role && <div className="font-semibold text-slate-900">{p.role}</div>}
+                              {p.qualifications && <div className="text-slate-600 mt-1">{p.qualifications}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (documentDetails?.keyPersonnelRaw) {
+                      return <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.keyPersonnelRaw}</p>;
+                    }
+                    return <p className="text-sm text-slate-500 italic">No key personnel requirements specified.</p>;
+                  })()}
+                </div>
+
+                {/* Key Equipment / Qualifications */}
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">Key Equipment & Qualifications</h3>
+                  {(() => {
+                    let items: { equipment_type?: string; min_quantity?: number }[] = [];
+                    try { items = JSON.parse(documentDetails?.keyEquipment || '[]'); } catch { /* ignore */ }
+                    const filtered = items.filter(e => e.equipment_type);
+                    if (filtered.length > 0) {
+                      return (
+                        <div className="space-y-2">
+                          {filtered.map((e, i) => (
+                            <div key={i} className="p-3 rounded-lg bg-slate-50 border text-sm flex items-start justify-between gap-3">
+                              <span className="text-slate-700">{e.equipment_type}</span>
+                              {e.min_quantity != null && (
+                                <span className="shrink-0 text-xs font-medium text-blue-900 bg-blue-50 border border-blue-200 rounded px-2 py-0.5">Min: {e.min_quantity}</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (documentDetails?.keyEquipmentRaw) {
+                      return <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 rounded p-3 border">{documentDetails.keyEquipmentRaw}</p>;
+                    }
+                    return <p className="text-sm text-slate-500 italic">No equipment requirements specified.</p>;
+                  })()}
                 </div>
 
                 <Separator />

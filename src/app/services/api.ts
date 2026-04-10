@@ -295,6 +295,36 @@ export interface PagedResult<T> {
 
 // ── Scraped Tenders ───────────────────────────────────────────────────────────
 
+export interface TenderDocumentDetailDto {
+  id: string;
+  tenderId: string;
+  bidBondAmount?: string;
+  bidBondForm?: string;
+  bidBondValidity?: string;
+  bidValidityPeriod?: string;
+  submissionDeadline?: string;
+  submissionMethod?: string;
+  preBidMeetingDate?: string;
+  preBidMeetingLink?: string;
+  clarificationDeadline?: string;
+  mandatorySiteVisit: boolean;
+  numberOfBidCopies?: string;
+  minAnnualTurnover?: string;
+  minLiquidAssets?: string;
+  minSingleContractValue?: string;
+  minCombinedContractValue?: string;
+  cashFlowRequirement?: string;
+  auditedFinancialsYears?: string;
+  keyPersonnel?: string;
+  keyEquipment?: string;
+  keyRequirementsRaw?: string;
+  financialQualificationsRaw?: string;
+  keyPersonnelRaw?: string;
+  keyEquipmentRaw?: string;
+  documentParsed: boolean;
+  parseError?: string;
+}
+
 export interface ScrapedTenderDto {
   id: string;
   source: string;
@@ -314,9 +344,16 @@ export interface ScrapedTenderDto {
   tenderFee?: number;
   documentReleaseDate?: string;
   procurementMethod?: string;
+  submissionMethodName?: string;
+  bidValidityDays?: number;
+  venue?: string;
+  peEmail?: string;
+  pePhone?: string;
+  peAddress?: string;
   startDate?: string;
   endDate?: string;
   createdAt: string;
+  documentDetails?: TenderDocumentDetailDto;
 }
 
 export interface ScrapedTenderListParams {
@@ -340,10 +377,10 @@ export const scrapedTendersApi = {
     if (params?.subCategory)       qs.set('subCategory', params.subCategory);
     if (params?.procurementMethod) qs.set('procurementMethod', params.procurementMethod);
     const query = qs.toString() ? `?${qs}` : '';
-    return request<PagedResult<ScrapedTenderDto>>(`/api/scraped-tenders${query}`);
+    return request<PagedResult<ScrapedTenderDto>>(`/api/tenderlisting${query}`);
   },
   getById: (id: string) =>
-    request<ScrapedTenderDto>(`/api/scraped-tenders/${id}`),
+    request<ScrapedTenderDto>(`/api/tenderlisting/${id}`),
   getSources: () =>
-    request<string[]>('/api/scraped-tenders/sources'),
+    request<string[]>('/api/tenderlisting/sources'),
 };

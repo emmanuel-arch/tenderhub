@@ -4,19 +4,20 @@ using TenderHub.API.Data;
 using TenderHub.API.DTOs.Common;
 using TenderHub.API.DTOs.ScrapedTenders;
 using TenderHub.API.Models;
-using TenderHub.API.Services;
 
 namespace TenderHub.API.Controllers;
 
 [ApiController]
-[Route("api/scraped-tenders")]
-public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncService syncService) : ControllerBase
+[Route("api/tenderlisting")]
+public class TenderListingController(ScrapedDbContext db) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<ScrapedTenderDto>), 200)]
     public async Task<IActionResult> GetAll([FromQuery] ScrapedTenderListParams p)
     {
-        var query = db.ScrapedTenders.AsNoTracking()
+        var query = db.ScrapedTenders
+            .Include(t => t.DocumentDetail)
+            .AsNoTracking()
             .Where(t => t.Deadline == null || t.Deadline >= DateTime.UtcNow)
             .AsQueryable();
 
@@ -65,18 +66,14 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var t = await db.ScrapedTenders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var t = await db.ScrapedTenders
+            .Include(t => t.DocumentDetail)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+
         if (t is null) return NotFound();
 
-        var dto = ToDto(t);
-
-        // Include document details if available
-        var docDetail = await db.TenderDocumentDetails.AsNoTracking()
-            .FirstOrDefaultAsync(d => d.TenderId == id);
-        if (docDetail is not null)
-            dto.DocumentDetails = ToDocDetailDto(docDetail);
-
-        return Ok(dto);
+        return Ok(ToDto(t));
     }
 
     [HttpGet("sources")]
@@ -90,14 +87,6 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
             .OrderBy(s => s)
             .ToListAsync();
         return Ok(sources);
-    }
-
-    [HttpPost("sync")]
-    [ProducesResponseType(200)]
-    public async Task<IActionResult> Sync(CancellationToken ct)
-    {
-        var (inserted, updated) = await syncService.SyncAsync(ct);
-        return Ok(new { inserted, updated });
     }
 
     private static ScrapedTenderDto ToDto(ScrapedTender t) => new()
@@ -128,18 +117,9 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
         PeAddress = t.PeAddress,
         StartDate = t.StartDate,
         EndDate = t.EndDate,
-        CreatedAt = t.CreatedAt
+        CreatedAt = t.CreatedAt,
+        DocumentDetails = t.DocumentDetail is null ? null : ToDocDetailDto(t.DocumentDetail)
     };
-
-    [HttpGet("{id:guid}/document-details")]
-    [ProducesResponseType(typeof(TenderDocumentDetailDto), 200)]
-    [ProducesResponseType(404)]
-    public async Task<IActionResult> GetDocumentDetails(Guid id)
-    {
-        var detail = await db.TenderDocumentDetails.AsNoTracking()
-            .FirstOrDefaultAsync(d => d.TenderId == id);
-        return detail is null ? NotFound() : Ok(ToDocDetailDto(detail));
-    }
 
     private static TenderDocumentDetailDto ToDocDetailDto(TenderDocumentDetail d) => new()
     {
@@ -164,6 +144,10 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
         AuditedFinancialsYears = d.AuditedFinancialsYears,
         KeyPersonnel = d.KeyPersonnel,
         KeyEquipment = d.KeyEquipment,
+        KeyRequirementsRaw = d.KeyRequirementsRaw,
+        FinancialQualificationsRaw = d.FinancialQualificationsRaw,
+        KeyPersonnelRaw = d.KeyPersonnelRaw,
+        KeyEquipmentRaw = d.KeyEquipmentRaw,
         DocumentParsed = d.DocumentParsed,
         ParseError = d.ParseError,
     };

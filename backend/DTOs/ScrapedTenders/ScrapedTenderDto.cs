@@ -17,7 +17,6 @@ public class ScrapedTenderDto
     public string? TenderNoticeUrl { get; set; }
     public bool BidBondRequired { get; set; }
     public decimal BidBondAmount { get; set; }
-    public decimal? TenderFee { get; set; }
     public DateTime? DocumentReleaseDate { get; set; }
     public string? ProcurementMethod { get; set; }
     public string? SubmissionMethodName { get; set; }
@@ -26,7 +25,7 @@ public class ScrapedTenderDto
     public string? PeEmail { get; set; }
     public string? PePhone { get; set; }
     public string? PeAddress { get; set; }
-    public decimal TenderFee { get; set; }
+    public decimal? TenderFee { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public DateTime CreatedAt { get; set; }
