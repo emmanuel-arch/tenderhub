@@ -1,4 +1,5 @@
 """Database helper – connects to SQL Server and inserts scraped tenders."""
+from __future__ import annotations
 
 import json
 import logging
@@ -331,6 +332,7 @@ def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> l
     WHERE t.DocumentUrl IS NOT NULL
       AND t.DocumentUrl <> ''
       AND d.Id IS NULL
+      AND (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
     """
     params = [limit]
     if source:
@@ -345,3 +347,64 @@ def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> l
         {"id": str(row[0]), "source": row[1], "title": row[2], "document_url": row[3]}
         for row in rows
     ]
+
+
+def reset_sparse_parses(source: str | None = None, min_fields: int = 3) -> int:
+    """Delete TenderDocumentDetails rows that are too sparse to be useful.
+
+    A row is considered sparse when BidBondAmount is NULL and fewer than
+    `min_fields` other key fields have a value. Only active tenders (deadline
+    in the future or no deadline) are considered so we don't waste cycles on
+    expired tenders.
+    """
+    sql = f"""
+    DELETE d FROM TenderDocumentDetails d
+    JOIN ScrapedTenders t ON t.Id = d.TenderId
+    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
+      AND d.BidBondAmount IS NULL
+      AND (
+            (CASE WHEN d.BidBondForm            IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.BidBondValidity         IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.BidValidityPeriod       IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.SubmissionDeadline      IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.SubmissionMethod        IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.PreBidMeetingDate       IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.MinAnnualTurnover       IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.MinLiquidAssets         IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.MinSingleContractValue  IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.MinCombinedContractValue IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.CashFlowRequirement     IS NULL THEN 0 ELSE 1 END) +
+            (CASE WHEN d.AuditedFinancialsYears  IS NULL THEN 0 ELSE 1 END)
+          ) < {min_fields}
+    """
+    params = []
+    if source:
+        sql += " AND t.Source = ?"
+        params.append(source)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        deleted = cur.rowcount
+        conn.commit()
+    log.info("Deleted %d sparse parse records (min_fields=%d).", deleted, min_fields)
+    return deleted
+
+
+def reset_failed_parses(source: str | None = None) -> int:
+    """Delete TenderDocumentDetails rows where DocumentParsed = 0 so they can be retried."""
+    sql = """
+    DELETE d FROM TenderDocumentDetails d
+    JOIN ScrapedTenders t ON t.Id = d.TenderId
+    WHERE d.DocumentParsed = 0
+    """
+    params = []
+    if source:
+        sql += " AND t.Source = ?"
+        params.append(source)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        deleted = cur.rowcount
+        conn.commit()
+    log.info("Deleted %d failed parse records.", deleted)
+    return deleted

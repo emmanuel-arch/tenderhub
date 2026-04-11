@@ -1,19 +1,24 @@
 """Parse tender document PDFs/ZIPs and save extracted details to the DB.
 
 Usage:
-    python parse_documents.py              # process up to 50 unprocessed tenders
-    python parse_documents.py 100          # process up to 100
-    python parse_documents.py --source tenders.go.ke 600  # only parse tenders from a specific source
-    python parse_documents.py --url URL    # parse a single URL (no DB save, prints result)
-    python parse_documents.py --tender-id ID  # parse document for a specific tender by DB id
+    python parse_documents.py                          # process up to 50 unprocessed tenders
+    python parse_documents.py 100                      # process up to 100
+    python parse_documents.py --source KRA 200         # only parse tenders from a specific source
+    python parse_documents.py --reparse-failed         # retry previously failed parses
+    python parse_documents.py --reparse-empty          # retry parses with missing bid bond + sparse fields
+    python parse_documents.py --workers 8 --source KRA 200  # parallel workers
+    python parse_documents.py --url URL                # parse a single URL (no DB save, prints result)
+    python parse_documents.py --tender-id ID           # parse document for a specific tender by DB id
 """
+from __future__ import annotations
 
 import json
 import logging
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details
+from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details, reset_failed_parses, reset_sparse_parses
 from document_parser import parse_tender_document
 
 logging.basicConfig(
@@ -85,7 +90,18 @@ def run_single_tender(tender_id: str):
     log.info("Saved to DB.")
 
 
-def run_batch(limit: int = 50, source: str | None = None):
+def _process_one(t: dict, idx: int, total: int) -> bool:
+    """Parse and save a single tender. Returns True if document_parsed."""
+    tender_id = t["id"]
+    url = t["document_url"]
+    title = t["title"][:60]
+    log.info("[%d/%d] Parsing: %s", idx, total, title)
+    parsed = parse_tender_document(url)
+    saved = save_document_details(tender_id, parsed)
+    return saved and bool(parsed.get("document_parsed"))
+
+
+def run_batch(limit: int = 50, source: str | None = None, workers: int = 1):
     """Process a batch of tenders that need document parsing."""
     ensure_table()
     ensure_doc_details_table()
@@ -102,30 +118,31 @@ def run_batch(limit: int = 50, source: str | None = None):
     success = 0
     failed = 0
     start = time.time()
+    total = len(tenders)
 
-    for i, t in enumerate(tenders, 1):
-        tender_id = t["id"]
-        url = t["document_url"]
-        title = t["title"][:60]
-        log.info("[%d/%d] Parsing: %s", i, len(tenders), title)
-
-        parsed = parse_tender_document(url)
-
-        if save_document_details(tender_id, parsed):
-            if parsed.get("document_parsed"):
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {
+                pool.submit(_process_one, t, i, total): t
+                for i, t in enumerate(tenders, 1)
+            }
+            for future in as_completed(futures):
+                if future.result():
+                    success += 1
+                else:
+                    failed += 1
+    else:
+        for i, t in enumerate(tenders, 1):
+            if _process_one(t, i, total):
                 success += 1
             else:
                 failed += 1
-        else:
-            failed += 1
-
-        # Polite delay between downloads
-        time.sleep(1)
+            time.sleep(1)
 
     elapsed = time.time() - start
     log.info(
         "Done. %d successful, %d failed out of %d (%.1fs).",
-        success, failed, len(tenders), elapsed,
+        success, failed, total, elapsed,
     )
 
 
@@ -146,6 +163,18 @@ if __name__ == "__main__":
             print("Usage: python parse_documents.py --tender-id <ID>")
     else:
         source = None
+        workers = 1
+        reparse_failed = False
+        reparse_empty = False
+
+        if "--reparse-failed" in args:
+            reparse_failed = True
+            args.remove("--reparse-failed")
+
+        if "--reparse-empty" in args:
+            reparse_empty = True
+            args.remove("--reparse-empty")
+
         if "--source" in args:
             idx = args.index("--source")
             if idx + 1 < len(args):
@@ -154,5 +183,21 @@ if __name__ == "__main__":
             else:
                 print("Usage: python parse_documents.py --source <SOURCE> [limit]")
                 sys.exit(1)
+
+        if "--workers" in args:
+            idx = args.index("--workers")
+            if idx + 1 < len(args):
+                workers = int(args.pop(idx + 1))
+                args.pop(idx)
+            else:
+                print("Usage: python parse_documents.py --workers <N>")
+                sys.exit(1)
+
+        if reparse_failed:
+            reset_failed_parses(source=source)
+
+        if reparse_empty:
+            reset_sparse_parses(source=source)
+
         limit = int(args[0]) if args else 50
-        run_batch(limit, source=source)
+        run_batch(limit, source=source, workers=workers)

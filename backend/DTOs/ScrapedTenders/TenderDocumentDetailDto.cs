@@ -15,7 +15,7 @@ public class TenderDocumentDetailDto
     public string? PreBidMeetingDate { get; set; }
     public string? PreBidMeetingLink { get; set; }
     public string? ClarificationDeadline { get; set; }
-    public bool MandatorySiteVisit { get; set; }
+    public bool? MandatorySiteVisit { get; set; }
     public string? NumberOfBidCopies { get; set; }
 
     // Section 2: Financial Qualification Thresholds
@@ -31,6 +31,6 @@ public class TenderDocumentDetailDto
     public string? FinancialQualificationsRaw { get; set; }
 
     // Metadata
-    public bool DocumentParsed { get; set; }
+    public bool? DocumentParsed { get; set; }
     public string? ParseError { get; set; }
 }

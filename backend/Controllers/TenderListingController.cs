@@ -33,6 +33,9 @@ public class TenderListingController(ScrapedDbContext db) : ControllerBase
         if (!string.IsNullOrWhiteSpace(p.Category))
             query = query.Where(t => t.Category == p.Category);
 
+        if (p.NotGovernment)
+            query = query.Where(t => t.Category != "Government");
+
         if (!string.IsNullOrWhiteSpace(p.SubCategory))
         {
             if (p.SubCategory == "Services")

@@ -141,7 +141,7 @@ export function BidBondForm() {
       const num = parseFloat(part.replace(/[^0-9.]/g, ''));
       if (part.includes('%')) pct = num; else base = num;
     }
-    return base + (tender.bidBondAmount * pct) / 100;
+    return base + ((tender.bidBondAmount ?? 0) * pct) / 100;
   };
 
   const handleSubmit = async () => {
@@ -161,8 +161,8 @@ export function BidBondForm() {
           procuringEntity: tender.procuringEntity || '',
           deadline: new Date(tender.deadline).toISOString(),
           industry: tender.industry || '',
-          bidBondRequired: tender.bidBondRequired,
-          bidBondAmount: tender.bidBondAmount,
+          bidBondRequired: tender.bidBondRequired ?? false,
+          bidBondAmount: tender.bidBondAmount ?? 0,
           category: tender.category === 'government' ? 'Government' : 'Private',
           subCategory: tender.subCategory ?? 'Goods',
           summary: tender.summary || '',
@@ -232,7 +232,7 @@ export function BidBondForm() {
           netWorth={formData.netWorth}
           bankAccount={formData.bankAccount}
           bankName={bank.name}
-          bondAmount={tender.bidBondAmount}
+          bondAmount={tender.bidBondAmount ?? 0}
           processingFee={tryParseAmount(bank.fees)}
           onChange={handleChange}
           errors={errors}
@@ -244,7 +244,7 @@ export function BidBondForm() {
           formData={formData}
           tenderTitle={tender.title}
           bankName={bank.name}
-          bondAmount={tender.bidBondAmount}
+          bondAmount={tender.bidBondAmount ?? 0}
           processingFee={tryParseAmount(bank.fees)}
           processingTime={bank.processingTime}
           files={files}

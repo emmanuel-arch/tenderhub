@@ -2,12 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { LogOut, AlertCircle, Loader2, Search, Filter } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Tender } from '../data/mockData';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchActiveTenders } from '../services/tenderService';
 import { scrapedTendersApi, type ScrapedTenderDto, type PagedResult } from '../services/api';
 import { ScrapedTenderCard } from './tender/ScrapedTenderCard';
 import { PaginationControls } from './tender/PaginationControls';
@@ -38,14 +36,23 @@ export function TenderList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
-  // ── API tenders state (SECONDARY) ──
-  const [apiTenders, setApiTenders] = useState<Tender[]>([]);
-  const [apiLoading, setApiLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [apiPage, setApiPage] = useState(1);
-  const [apiTotalPages, setApiTotalPages] = useState(1);
-  const [apiTotal, setApiTotal] = useState(0);
-  const [showApiTenders, setShowApiTenders] = useState(false);
+  // ── Government tenders state ──
+  const [govTenders, setGovTenders] = useState<ScrapedTenderDto[]>([]);
+  const [govLoading, setGovLoading] = useState(false);
+  const [govError, setGovError] = useState<string | null>(null);
+  const [govPage, setGovPage] = useState(1);
+  const [govTotalPages, setGovTotalPages] = useState(1);
+  const [govTotal, setGovTotal] = useState(0);
+  const [showGov, setShowGov] = useState(false);
+
+  // ── Private tenders state ──
+  const [privateTenders, setPrivateTenders] = useState<ScrapedTenderDto[]>([]);
+  const [privateLoading, setPrivateLoading] = useState(false);
+  const [privateError, setPrivateError] = useState<string | null>(null);
+  const [privatePage, setPrivatePage] = useState(1);
+  const [privateTotalPages, setPrivateTotalPages] = useState(1);
+  const [privateTotal, setPrivateTotal] = useState(0);
+  const [showPrivate, setShowPrivate] = useState(false);
 
   // ── Main tab ──
   const [mainTab, setMainTab] = useState('scraped');
@@ -72,29 +79,57 @@ export function TenderList() {
 
   useEffect(() => { loadScraped(); }, [loadScraped]);
 
-  // Load API tenders (on demand)
-  const loadApiTenders = useCallback(async () => {
-    setApiLoading(true);
-    setApiError(null);
+  // Load government tenders (on demand)
+  const loadGov = useCallback(async () => {
+    setGovLoading(true);
+    setGovError(null);
     try {
-      const result = await fetchActiveTenders(apiPage);
-      setApiTenders(result.tenders);
-      setApiTotalPages(result.totalPages);
-      setApiTotal(result.total);
+      const params: Record<string, any> = { page: govPage, pageSize: 20, category: 'Government' };
+      if (categoryFilter !== 'all') params.subCategory = categoryFilter;
+      if (searchQuery) params.search = searchQuery;
+      const result: PagedResult<ScrapedTenderDto> = await scrapedTendersApi.list(params);
+      setGovTenders(result.data);
+      setGovTotalPages(Math.ceil(result.totalCount / result.pageSize));
+      setGovTotal(result.totalCount);
     } catch {
-      setApiError('Failed to load government API tenders.');
+      setGovError('Failed to load government tenders.');
     } finally {
-      setApiLoading(false);
+      setGovLoading(false);
     }
-  }, [apiPage]);
+  }, [govPage, categoryFilter, searchQuery]);
 
   useEffect(() => {
-    if (showApiTenders) loadApiTenders();
-  }, [showApiTenders, loadApiTenders]);
+    if (showGov) loadGov();
+  }, [showGov, loadGov]);
+
+  // Load private tenders (on demand)
+  const loadPrivate = useCallback(async () => {
+    setPrivateLoading(true);
+    setPrivateError(null);
+    try {
+      const params: Record<string, any> = { page: privatePage, pageSize: 20, notGovernment: true };
+      if (categoryFilter !== 'all') params.subCategory = categoryFilter;
+      if (searchQuery) params.search = searchQuery;
+      const result: PagedResult<ScrapedTenderDto> = await scrapedTendersApi.list(params);
+      setPrivateTenders(result.data);
+      setPrivateTotalPages(Math.ceil(result.totalCount / result.pageSize));
+      setPrivateTotal(result.totalCount);
+    } catch {
+      setPrivateError('Failed to load private tenders.');
+    } finally {
+      setPrivateLoading(false);
+    }
+  }, [privatePage, categoryFilter, searchQuery]);
+
+  useEffect(() => {
+    if (showPrivate) loadPrivate();
+  }, [showPrivate, loadPrivate]);
 
   const handleSearch = () => {
     setSearchQuery(searchInput);
     setScrapedPage(1);
+    setGovPage(1);
+    setPrivatePage(1);
   };
 
   const handleScrapedPageChange = (dir: 'prev' | 'next') => {
@@ -102,8 +137,13 @@ export function TenderList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleApiPageChange = (dir: 'prev' | 'next') => {
-    setApiPage(p => dir === 'next' ? p + 1 : p - 1);
+  const handleGovPageChange = (dir: 'prev' | 'next') => {
+    setGovPage(p => dir === 'next' ? p + 1 : p - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrivatePageChange = (dir: 'prev' | 'next') => {
+    setPrivatePage(p => dir === 'next' ? p + 1 : p - 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -141,16 +181,18 @@ export function TenderList() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Main Tabs */}
-        <Tabs value={mainTab} onValueChange={v => { setMainTab(v); if (v === 'api') setShowApiTenders(true); }}>
+        <Tabs value={mainTab} onValueChange={v => {
+          setMainTab(v);
+          if (v === 'api') setShowGov(true);
+          if (v === 'private') setShowPrivate(true);
+        }}>
           <TabsList className="mb-6 w-full grid grid-cols-3">
             <TabsTrigger value="scraped" className="gap-1.5 text-xs sm:text-sm">
               <Filter className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden sm:inline truncate">All Tenders ({scrapedTotal.toLocaleString()})</span>
-              <span className="sm:hidden">All</span>
+              All Tenders
             </TabsTrigger>
             <TabsTrigger value="api" className="text-xs sm:text-sm">
-              <span className="hidden sm:inline">Government Portal</span>
-              <span className="sm:hidden">Gov't</span>
+              Government
             </TabsTrigger>
             <TabsTrigger value="private" className="text-xs sm:text-sm">
               Private
@@ -256,63 +298,78 @@ export function TenderList() {
             )}
           </TabsContent>
 
-          {/* ── API TENDERS (SECONDARY) ── */}
+          {/* ── GOVERNMENT TENDERS ── */}
           <TabsContent value="api">
-            {apiLoading ? (
+            {govLoading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
                 <span className="ml-3 text-slate-600">Loading government tenders…</span>
               </div>
-            ) : apiError ? (
+            ) : govError ? (
               <Card className="border-red-200 bg-red-50">
                 <CardContent className="py-8 text-center">
                   <AlertCircle className="w-12 h-12 mx-auto text-red-600 mb-3" />
-                  <p className="text-red-800 font-medium">{apiError}</p>
+                  <p className="text-red-800 font-medium">{govError}</p>
+                  <Button variant="outline" className="mt-4" onClick={loadGov}>Try Again</Button>
                 </CardContent>
               </Card>
-            ) : apiTenders.length === 0 ? (
-              <EmptyState message="No government tenders available right now." />
+            ) : govTenders.length === 0 ? (
+              <EmptyState message="No government tenders found." />
             ) : (
               <>
                 <div className="mb-4 text-sm text-slate-500">
-                  Showing {apiTenders.length} of {apiTotal} — Page {apiPage} of {apiTotalPages}
+                  Showing {govTenders.length} of {govTotal.toLocaleString()} — Page {govPage} of {govTotalPages}
                 </div>
                 <div className="space-y-4">
-                  {apiTenders.map(t => (
-                    <ScrapedTenderCard key={t.id} tender={{
-                      id: t.id,
-                      source: 'tenders.go.ke',
-                      title: t.title,
-                      tenderNumber: t.tenderNumber,
-                      procuringEntity: t.procuringEntity,
-                      deadline: t.deadline,
-                      category: t.category,
-                      subCategory: t.subCategory,
-                      summary: t.summary,
-                      description: t.description,
-                      documentUrl: t.documentUrl,
-                      bidBondRequired: t.bidBondRequired,
-                      bidBondAmount: t.bidBondAmount,
-                      createdAt: new Date().toISOString(),
-                    } as ScrapedTenderDto} />
-                  ))}
+                  {govTenders.map(t => <ScrapedTenderCard key={t.id} tender={t} />)}
                 </div>
               </>
             )}
-
-            {!apiLoading && apiTotalPages > 1 && (
+            {!govLoading && govTotalPages > 1 && (
               <PaginationControls
-                currentPage={apiPage}
-                totalPages={apiTotalPages}
-                onPrev={() => handleApiPageChange('prev')}
-                onNext={() => handleApiPageChange('next')}
+                currentPage={govPage}
+                totalPages={govTotalPages}
+                onPrev={() => handleGovPageChange('prev')}
+                onNext={() => handleGovPageChange('next')}
               />
             )}
           </TabsContent>
 
           {/* ── PRIVATE TENDERS ── */}
           <TabsContent value="private">
-            <EmptyState message="No private tenders available yet." />
+            {privateLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
+                <span className="ml-3 text-slate-600">Loading private tenders…</span>
+              </div>
+            ) : privateError ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="py-8 text-center">
+                  <AlertCircle className="w-12 h-12 mx-auto text-red-600 mb-3" />
+                  <p className="text-red-800 font-medium">{privateError}</p>
+                  <Button variant="outline" className="mt-4" onClick={loadPrivate}>Try Again</Button>
+                </CardContent>
+              </Card>
+            ) : privateTenders.length === 0 ? (
+              <EmptyState message="No private tenders found." />
+            ) : (
+              <>
+                <div className="mb-4 text-sm text-slate-500">
+                  Showing {privateTenders.length} of {privateTotal.toLocaleString()} — Page {privatePage} of {privateTotalPages}
+                </div>
+                <div className="space-y-4">
+                  {privateTenders.map(t => <ScrapedTenderCard key={t.id} tender={t} />)}
+                </div>
+              </>
+            )}
+            {!privateLoading && privateTotalPages > 1 && (
+              <PaginationControls
+                currentPage={privatePage}
+                totalPages={privateTotalPages}
+                onPrev={() => handlePrivatePageChange('prev')}
+                onNext={() => handlePrivatePageChange('next')}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </main>

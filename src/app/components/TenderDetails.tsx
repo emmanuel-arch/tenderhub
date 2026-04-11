@@ -82,7 +82,7 @@ export function TenderDetails() {
       const numeric = documentDetails.bidBondAmount.replace(/[^0-9.]/g, '');
       if (numeric) { setManualBondAmount(numeric); return; }
     }
-    if (tender && tender.bidBondAmount > 0) {
+    if (tender && tender.bidBondAmount && tender.bidBondAmount > 0) {
       setManualBondAmount(String(tender.bidBondAmount));
     }
   }, [documentDetails, tender]);
@@ -244,7 +244,7 @@ export function TenderDetails() {
                   {procurementMethod && (
                     <Badge variant="outline" className="bg-blue-50 text-blue-900 border-blue-200">{procurementMethod}</Badge>
                   )}
-                  {tender.bidBondRequired && (
+                  {!!tender.bidBondRequired && (
                     <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                       <AlertCircle className="w-3 h-3 mr-1" />
                       Bid Bond Required
@@ -288,7 +288,7 @@ export function TenderDetails() {
                   <h3 className="font-semibold text-slate-900 mb-3">Tender Requirements</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 rounded-lg p-4">
                     <DetailItem icon={<Calendar className="w-5 h-5 text-orange-700" />} bg="bg-orange-100" label="Submission Deadline" value={documentDetails?.submissionDeadline} />
-                    <DetailItem icon={<AlertCircle className="w-5 h-5 text-green-700" />} bg="bg-green-100" label="Bid Bond Amount" value={documentDetails?.bidBondAmount ?? (tender.bidBondAmount > 0 ? formatCurrency(tender.bidBondAmount) : undefined)} />
+                    <DetailItem icon={<AlertCircle className="w-5 h-5 text-green-700" />} bg="bg-green-100" label="Bid Bond Amount" value={documentDetails?.bidBondAmount ?? (tender.bidBondAmount && tender.bidBondAmount > 0 ? formatCurrency(tender.bidBondAmount) : undefined)} />
                     <DetailItem icon={<FileText className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Form" value={documentDetails?.bidBondForm} />
                     <DetailItem icon={<Calendar className="w-5 h-5 text-blue-900" />} bg="bg-blue-100" label="Bid Bond Validity" value={documentDetails?.bidBondValidity} />
                     <DetailItem icon={<Calendar className="w-5 h-5 text-slate-600" />} bg="bg-slate-100" label="Bid Validity Period" value={documentDetails?.bidValidityPeriod} />
@@ -301,7 +301,7 @@ export function TenderDetails() {
                       <div>
                         <div className="text-xs text-slate-500 uppercase tracking-wide">Mandatory Site Visit</div>
                         <div className={`font-semibold ${documentDetails?.mandatorySiteVisit ? 'text-red-700' : 'text-slate-900'}`}>
-                          {documentDetails ? (documentDetails.mandatorySiteVisit ? 'Yes' : 'No') : '—'}
+                          {documentDetails ? (documentDetails.mandatorySiteVisit === true ? 'Yes' : documentDetails.mandatorySiteVisit === false ? 'No' : '—') : '—'}
                         </div>
                       </div>
                     </div>
@@ -413,7 +413,7 @@ export function TenderDetails() {
                     'Valid business registration certificate',
                     'Tax compliance certificate (valid)',
                     'Audited financial statements for the last 3 years',
-                    ...(tender.bidBondRequired ? ['Bid bond/security as specified'] : []),
+                    ...(tender.bidBondRequired ? ['Bid bond/security as specified'] : [] as string[]),
                     'Company profile and relevant experience',
                   ].map((req, i) => (
                     <li key={i} className="flex items-start gap-3">
@@ -432,7 +432,7 @@ export function TenderDetails() {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-4">
               {/* Bid Bond Card */}
-              {tender.bidBondRequired ? (
+              {tender.bidBondRequired === true ? (
                 <Card className="shadow-lg border-0 overflow-hidden">
                   <div className="h-2 bg-gradient-to-r from-green-800 to-green-900" />
                   <CardHeader className="bg-green-50">
@@ -445,7 +445,7 @@ export function TenderDetails() {
                     <div>
                       <div className="text-sm text-slate-500 mb-1">Bond Amount</div>
                       <div className="text-3xl font-bold text-slate-900">
-                        {tender.bidBondAmount > 0
+                        {tender.bidBondAmount && tender.bidBondAmount > 0
                           ? formatCurrency(tender.bidBondAmount)
                           : 'Not specified'}
                       </div>
@@ -460,7 +460,7 @@ export function TenderDetails() {
                     <Button
                       className="w-full bg-blue-900 hover:bg-blue-800 shadow-md"
                       size="lg"
-                      onClick={() => navigate(`/tender/${tender.id}/banks?bondAmount=${tender.bidBondAmount}`, { state: { tender } })}
+                      onClick={() => navigate(`/tender/${tender.id}/banks?bondAmount=${tender.bidBondAmount ?? 0}`, { state: { tender } })}
                     >
                       Apply for Bid Bond
                     </Button>

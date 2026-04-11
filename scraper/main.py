@@ -7,6 +7,7 @@ Usage:
     python main.py egp          # scrape eGP Kenya only
     python main.py afa kra      # scrape AFA and KRA
 """
+from __future__ import annotations
 
 import logging
 import sys

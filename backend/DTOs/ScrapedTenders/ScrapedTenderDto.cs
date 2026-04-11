@@ -15,8 +15,8 @@ public class ScrapedTenderDto
     public string? Description { get; set; }
     public string? DocumentUrl { get; set; }
     public string? TenderNoticeUrl { get; set; }
-    public bool BidBondRequired { get; set; }
-    public decimal BidBondAmount { get; set; }
+    public bool? BidBondRequired { get; set; }
+    public decimal? BidBondAmount { get; set; }
     public DateTime? DocumentReleaseDate { get; set; }
     public string? ProcurementMethod { get; set; }
     public string? SubmissionMethodName { get; set; }
@@ -41,6 +41,7 @@ public class ScrapedTenderListParams
     public string? Source { get; set; }
     public string? Search { get; set; }
     public string? Category { get; set; }
+    public bool NotGovernment { get; set; }
     public string? SubCategory { get; set; }
     public string? ProcurementMethod { get; set; }
 }

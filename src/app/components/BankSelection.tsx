@@ -178,7 +178,7 @@ export function BankSelection() {
                 </div>
                 <div>
                   <div className="text-xs text-slate-500 uppercase tracking-wide">Bond Amount Required</div>
-                  <div className="text-xl font-bold text-slate-900">{formatCurrency(tender.bidBondAmount)}</div>
+                  <div className="text-xl font-bold text-slate-900">{tender.bidBondAmount ? formatCurrency(tender.bidBondAmount) : '—'}</div>
                 </div>
               </div>
             </div>

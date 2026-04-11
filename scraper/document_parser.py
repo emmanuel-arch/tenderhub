@@ -8,6 +8,7 @@ and parses four core sections:
 3. KEY PERSONNEL REQUIRED – roles, qualifications, experience
 4. KEY EQUIPMENT REQUIRED – types, quantities, ownership
 """
+from __future__ import annotations
 
 import io
 import logging
@@ -19,6 +20,7 @@ import zipfile
 from datetime import datetime
 from typing import Any
 
+import fitz  # PyMuPDF
 import pdfplumber
 import requests
 
@@ -36,8 +38,20 @@ _TIMEOUT = 60
 
 # ── PDF text extraction ───────────────────────────────────────────────────────
 
-def _extract_text_from_pdf_bytes(data: bytes) -> str:
-    """Extract all text from a PDF byte stream."""
+def _extract_text_pymupdf(data: bytes) -> str:
+    """Extract text using PyMuPDF (fast primary extractor)."""
+    text_parts: list[str] = []
+    try:
+        with fitz.open(stream=data, filetype="pdf") as doc:
+            for page in doc:
+                text_parts.append(page.get_text())
+    except Exception as exc:
+        log.debug("PyMuPDF failed: %s", exc)
+    return "\n".join(text_parts)
+
+
+def _extract_text_pdfplumber(data: bytes) -> str:
+    """Extract text using pdfplumber (fallback, better for tables)."""
     text_parts: list[str] = []
     try:
         with pdfplumber.open(io.BytesIO(data)) as pdf:
@@ -50,6 +64,18 @@ def _extract_text_from_pdf_bytes(data: bytes) -> str:
     except Exception as exc:
         log.warning("pdfplumber failed: %s", exc)
     return "\n".join(text_parts)
+
+
+def _extract_text_from_pdf_bytes(data: bytes) -> str:
+    """Extract all text from a PDF byte stream.
+
+    Tries PyMuPDF first (faster). Falls back to pdfplumber if result is empty.
+    """
+    text = _extract_text_pymupdf(data)
+    if text.strip():
+        return text
+    log.debug("PyMuPDF returned empty text, falling back to pdfplumber")
+    return _extract_text_pdfplumber(data)
 
 
 def _extract_text_from_zip_bytes(data: bytes) -> str:

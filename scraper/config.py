@@ -7,7 +7,7 @@ _env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(_env_path)
 
 DB_SERVER = os.getenv("DB_SERVER", "45.150.188.26,4420")
-DB_NAME = os.getenv("DB_NAME", "Serviceconnect")
+DB_NAME = os.getenv("DB_NAME", "TenderHub")
 DB_USER = os.getenv("DB_USER", "tester")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "Ngong123@")
 

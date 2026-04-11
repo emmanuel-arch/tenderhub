@@ -98,10 +98,10 @@ export function ScrapedTenderCard({ tender }: Props) {
         )}
 
         {/* Bid Bond */}
-        {(tender.documentDetails?.bidBondAmount || tender.bidBondAmount > 0) && (
+        {(tender.documentDetails?.bidBondAmount || (tender.bidBondAmount && tender.bidBondAmount > 0)) && (
           <div className="flex items-center gap-1 text-xs font-semibold text-red-600">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Bid Bond: {tender.documentDetails?.bidBondAmount ?? `KES ${tender.bidBondAmount.toLocaleString()}`}
+            Bid Bond: {tender.documentDetails?.bidBondAmount ?? `KES ${tender.bidBondAmount!.toLocaleString()}`}
           </div>
         )}
 

@@ -38,7 +38,7 @@ public class TenderDocumentDetail
     [MaxLength(200)]
     public string? ClarificationDeadline { get; set; }
 
-    public bool MandatorySiteVisit { get; set; }
+    public bool? MandatorySiteVisit { get; set; }
 
     [MaxLength(50)]
     public string? NumberOfBidCopies { get; set; }
@@ -77,7 +77,7 @@ public class TenderDocumentDetail
     public string? KeyEquipmentRaw { get; set; }
 
     // Metadata
-    public bool DocumentParsed { get; set; }
+    public bool? DocumentParsed { get; set; }
 
     public string? ParsedDocumentUrl { get; set; }
 

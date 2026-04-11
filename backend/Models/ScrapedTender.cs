@@ -39,10 +39,10 @@ public class ScrapedTender
 
     public string? TenderNoticeUrl { get; set; }
 
-    public bool BidBondRequired { get; set; }
+    public bool? BidBondRequired { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
-    public decimal BidBondAmount { get; set; }
+    public decimal? BidBondAmount { get; set; }
 
     public DateTime? DocumentReleaseDate { get; set; }
 
@@ -67,7 +67,7 @@ public class ScrapedTender
     public string? PeAddress { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
-    public decimal TenderFee { get; set; }
+    public decimal? TenderFee { get; set; }
 
     public DateTime? StartDate { get; set; }
 

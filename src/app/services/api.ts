@@ -307,7 +307,7 @@ export interface TenderDocumentDetailDto {
   preBidMeetingDate?: string;
   preBidMeetingLink?: string;
   clarificationDeadline?: string;
-  mandatorySiteVisit: boolean;
+  mandatorySiteVisit?: boolean;
   numberOfBidCopies?: string;
   minAnnualTurnover?: string;
   minLiquidAssets?: string;
@@ -317,7 +317,7 @@ export interface TenderDocumentDetailDto {
   auditedFinancialsYears?: string;
   keyRequirementsRaw?: string;
   financialQualificationsRaw?: string;
-  documentParsed: boolean;
+  documentParsed?: boolean;
   parseError?: string;
 }
 
@@ -335,8 +335,8 @@ export interface ScrapedTenderDto {
   description?: string;
   documentUrl?: string;
   tenderNoticeUrl?: string;
-  bidBondRequired: boolean;
-  bidBondAmount: number;
+  bidBondRequired?: boolean;
+  bidBondAmount?: number;
   tenderFee?: number;
   documentReleaseDate?: string;
   procurementMethod?: string;
@@ -358,6 +358,7 @@ export interface ScrapedTenderListParams {
   source?: string;
   search?: string;
   category?: string;
+  notGovernment?: boolean;
   subCategory?: string;
   procurementMethod?: string;
 }
@@ -370,6 +371,7 @@ export const scrapedTendersApi = {
     if (params?.source)            qs.set('source', params.source);
     if (params?.search)            qs.set('search', params.search);
     if (params?.category)          qs.set('category', params.category);
+    if (params?.notGovernment)     qs.set('notGovernment', 'true');
     if (params?.subCategory)       qs.set('subCategory', params.subCategory);
     if (params?.procurementMethod) qs.set('procurementMethod', params.procurementMethod);
     const query = qs.toString() ? `?${qs}` : '';
