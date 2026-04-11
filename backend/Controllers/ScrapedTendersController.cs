@@ -162,8 +162,6 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
         MinCombinedContractValue = d.MinCombinedContractValue,
         CashFlowRequirement = d.CashFlowRequirement,
         AuditedFinancialsYears = d.AuditedFinancialsYears,
-        KeyPersonnel = d.KeyPersonnel,
-        KeyEquipment = d.KeyEquipment,
         DocumentParsed = d.DocumentParsed,
         ParseError = d.ParseError,
     };
