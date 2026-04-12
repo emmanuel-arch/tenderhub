@@ -352,16 +352,20 @@ def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> l
 def reset_sparse_parses(source: str | None = None, min_fields: int = 3) -> int:
     """Delete TenderDocumentDetails rows that are too sparse to be useful.
 
-    A row is considered sparse when BidBondAmount is NULL and fewer than
-    `min_fields` other key fields have a value. Only active tenders (deadline
-    in the future or no deadline) are considered so we don't waste cycles on
-    expired tenders.
+    A row is considered sparse when BidBondAmount is effectively missing
+    (NULL, blank, zero-ish, or N/A) and fewer than `min_fields` other key
+    fields have a value. Only active tenders (deadline in the future or no
+    deadline) are considered so we don't waste cycles on expired tenders.
     """
     sql = f"""
     DELETE d FROM TenderDocumentDetails d
     JOIN ScrapedTenders t ON t.Id = d.TenderId
     WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
-      AND d.BidBondAmount IS NULL
+      AND (
+            d.BidBondAmount IS NULL OR
+            LTRIM(RTRIM(d.BidBondAmount)) = '' OR
+            UPPER(LTRIM(RTRIM(d.BidBondAmount))) IN ('0', '0.0', '0.00', 'N/A', 'NA', 'NONE', 'NULL', 'KES 0', 'KES 0.0', 'KES 0.00')
+          )
       AND (
             (CASE WHEN d.BidBondForm            IS NULL THEN 0 ELSE 1 END) +
             (CASE WHEN d.BidBondValidity         IS NULL THEN 0 ELSE 1 END) +
@@ -387,6 +391,32 @@ def reset_sparse_parses(source: str | None = None, min_fields: int = 3) -> int:
         deleted = cur.rowcount
         conn.commit()
     log.info("Deleted %d sparse parse records (min_fields=%d).", deleted, min_fields)
+    return deleted
+
+
+def reset_zero_bidbond_parses(source: str | None = None) -> int:
+    """Delete TenderDocumentDetails rows where BidBondAmount is missing or zero,
+    regardless of how many other fields are populated, so they get re-parsed."""
+    sql = """
+    DELETE d FROM TenderDocumentDetails d
+    JOIN ScrapedTenders t ON t.Id = d.TenderId
+    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
+      AND (
+            d.BidBondAmount IS NULL OR
+            LTRIM(RTRIM(d.BidBondAmount)) = '' OR
+            UPPER(LTRIM(RTRIM(d.BidBondAmount))) IN ('0', '0.0', '0.00', 'N/A', 'NA', 'NONE', 'NULL', 'KES 0', 'KES 0.0', 'KES 0.00')
+          )
+    """
+    params = []
+    if source:
+        sql += " AND t.Source = ?"
+        params.append(source)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        deleted = cur.rowcount
+        conn.commit()
+    log.info("Deleted %d zero-bidbond parse records.", deleted)
     return deleted
 
 

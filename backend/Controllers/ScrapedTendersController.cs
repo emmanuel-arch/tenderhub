@@ -45,7 +45,8 @@ public class ScrapedTendersController(ScrapedDbContext db, TendersGoKeSyncServic
 
         var total = await query.CountAsync();
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.BidBondAmount > 1)
+            .ThenByDescending(t => t.CreatedAt)
             .Skip((p.Page - 1) * p.PageSize)
             .Take(p.PageSize)
             .Select(t => ToDto(t))

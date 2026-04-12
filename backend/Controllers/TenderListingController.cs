@@ -49,7 +49,8 @@ public class TenderListingController(ScrapedDbContext db) : ControllerBase
 
         var total = await query.CountAsync();
         var items = await query
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.DocumentDetail != null && t.DocumentDetail.BidBondAmount != null && t.DocumentDetail.BidBondAmount != "0" && t.DocumentDetail.BidBondAmount != "" ? 1 : 0)
+            .ThenByDescending(t => t.CreatedAt)
             .Skip((p.Page - 1) * p.PageSize)
             .Take(p.PageSize)
             .Select(t => ToDto(t))

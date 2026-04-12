@@ -18,7 +18,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details, reset_failed_parses, reset_sparse_parses
+from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details, reset_failed_parses, reset_sparse_parses, reset_zero_bidbond_parses
 from document_parser import parse_tender_document
 
 logging.basicConfig(
@@ -166,6 +166,7 @@ if __name__ == "__main__":
         workers = 1
         reparse_failed = False
         reparse_empty = False
+        reparse_zero_bidbond = False
 
         if "--reparse-failed" in args:
             reparse_failed = True
@@ -174,6 +175,10 @@ if __name__ == "__main__":
         if "--reparse-empty" in args:
             reparse_empty = True
             args.remove("--reparse-empty")
+
+        if "--reparse-zero-bidbond" in args:
+            reparse_zero_bidbond = True
+            args.remove("--reparse-zero-bidbond")
 
         if "--source" in args:
             idx = args.index("--source")
@@ -198,6 +203,9 @@ if __name__ == "__main__":
 
         if reparse_empty:
             reset_sparse_parses(source=source)
+
+        if reparse_zero_bidbond:
+            reset_zero_bidbond_parses(source=source)
 
         limit = int(args[0]) if args else 50
         run_batch(limit, source=source, workers=workers)

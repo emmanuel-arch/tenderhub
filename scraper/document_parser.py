@@ -140,16 +140,32 @@ def download_and_extract_text(url: str) -> str:
 def _find_amount(text: str) -> str | None:
     """Extract a monetary amount like 'KES 3,000,000' or '3M' from text.
     Skips template placeholders like '[insert amount]'."""
+    text = re.sub(r"\s+", " ", text).strip()
+
     # Skip if it's a template placeholder
     if re.search(r'\[insert', text, re.IGNORECASE):
         return None
     # Pattern: KES/Kshs/Kenya Shillings followed by amount
     m = re.search(
-        r'(?:KES|KSH|Kshs?|Kenya\s+Shillings?)\s*\.?\s*([\d,]+(?:\.\d+)?)',
+        r'(?:KES|KSH|Kshs?)\s*\.?\s*([\d]{1,3}(?:[,\s][\d]{3})*(?:\.\d+)?)(?:\s*/-)?',
         text, re.IGNORECASE
     )
     if m:
-        return f"KES {m.group(1)}"
+        return "KES " + re.sub(r"\s+", "", m.group(1))
+    # Kenya Shillings may be followed by words first, then a numeric amount in parentheses.
+    m = re.search(
+        r'Kenya\s+Shillings?.{0,80}?\(\s*(?:KES|KSH|Kshs?)\s*\.?\s*'
+        r'([\d]{1,3}(?:[,\s][\d]{3})*(?:\.\d+)?)(?:\s*/-)?\s*\)',
+        text, re.IGNORECASE
+    )
+    if m:
+        return "KES " + re.sub(r"\s+", "", m.group(1))
+    m = re.search(
+        r'Kenya\s+Shillings?.{0,80}?([\d]{1,3}(?:[,\s][\d]{3})*(?:\.\d+)?)(?:\s*/-)?',
+        text, re.IGNORECASE
+    )
+    if m:
+        return "KES " + re.sub(r"\s+", "", m.group(1))
     # "X million" pattern
     m = re.search(r'(\d+)\s*million', text, re.IGNORECASE)
     if m:
@@ -286,6 +302,27 @@ def _parse_bid_bond(result: dict, tds: str, invitation: str, text: str):
     for source in [tds, invitation, text]:
         if not source:
             continue
+
+        normalized = re.sub(r"\s+", " ", source)
+        for match in re.finditer(r"(tender security|bid security|bid bond)", normalized, re.IGNORECASE):
+            ctx = normalized[match.start():match.start() + 300]
+
+            if not result.get("bid_bond_amount"):
+                amt = _find_amount(ctx)
+                if amt:
+                    result["bid_bond_amount"] = amt
+
+            if not result.get("bid_bond_form"):
+                for form_type in ["bank guarantee", "insurance guarantee",
+                                  "unconditional bank guarantee", "tender bond",
+                                  "bid bond", "tender-securing declaration"]:
+                    if form_type in ctx.lower():
+                        result["bid_bond_form"] = form_type.title()
+                        break
+
+            if result.get("bid_bond_amount"):
+                break
+
         lines = source.split("\n")
         for i, line in enumerate(lines):
             low = line.lower()
