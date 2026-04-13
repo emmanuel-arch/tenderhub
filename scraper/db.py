@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
+
 import pyodbc
 from config import DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD
 
@@ -138,9 +140,15 @@ def save_tenders(tenders: list[dict]) -> int:
         return 0
 
     inserted = 0
+    skipped_expired = 0
     with get_connection() as conn:
         cur = conn.cursor()
         for t in tenders:
+            deadline = t.get("deadline")
+            if deadline and deadline < datetime.now(timezone.utc).replace(tzinfo=None):
+                log.debug("Skipping expired tender: %s", t["title"])
+                skipped_expired += 1
+                continue
             if tender_exists(cur, t["source"], t["title"]):
                 log.debug("Skipping duplicate: %s – %s", t["source"], t["title"])
                 continue
@@ -417,6 +425,57 @@ def reset_zero_bidbond_parses(source: str | None = None) -> int:
         deleted = cur.rowcount
         conn.commit()
     log.info("Deleted %d zero-bidbond parse records.", deleted)
+    return deleted
+
+
+def reset_low_bidbond_parses(source: str | None = None, min_val: int = 50, max_val: int = 3000) -> int:
+    """Delete TenderDocumentDetails rows where the numeric bid bond amount is
+    suspiciously low (between min_val and max_val), indicating a parse error
+    e.g. '500' was extracted instead of '500,000'."""
+    sql = f"""
+    DELETE d FROM TenderDocumentDetails d
+    JOIN ScrapedTenders t ON t.Id = d.TenderId
+    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
+      AND d.BidBondAmount IS NOT NULL
+      AND TRY_CAST(
+            REPLACE(REPLACE(UPPER(LTRIM(RTRIM(d.BidBondAmount))), 'KES ', ''), ',', '')
+          AS DECIMAL(18,2)) BETWEEN {min_val} AND {max_val}
+    """
+    params = []
+    if source:
+        sql += " AND t.Source = ?"
+        params.append(source)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        deleted = cur.rowcount
+        conn.commit()
+    log.info("Deleted %d low-bidbond parse records (range %d–%d).", deleted, min_val, max_val)
+    return deleted
+
+
+def reset_tiny_bidbond_parses(source: str | None = None) -> int:
+    """Delete TenderDocumentDetails rows where the numeric bid bond amount is
+    between 1 and 49 (exclusive of 0 and 50), indicating a parse error."""
+    sql = """
+    DELETE d FROM TenderDocumentDetails d
+    JOIN ScrapedTenders t ON t.Id = d.TenderId
+    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
+      AND d.BidBondAmount IS NOT NULL
+      AND TRY_CAST(
+            REPLACE(REPLACE(UPPER(LTRIM(RTRIM(d.BidBondAmount))), 'KES ', ''), ',', '')
+          AS DECIMAL(18,2)) BETWEEN 1 AND 49
+    """
+    params = []
+    if source:
+        sql += " AND t.Source = ?"
+        params.append(source)
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(sql, *params)
+        deleted = cur.rowcount
+        conn.commit()
+    log.info("Deleted %d tiny-bidbond parse records (range 1–49).", deleted)
     return deleted
 
 

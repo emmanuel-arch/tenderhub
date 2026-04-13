@@ -163,7 +163,7 @@ export interface BankDto {
   digitalOption: boolean;
   rating: number;
   isActive: boolean;
-  institutionType: 'Bank' | 'Microfinance';
+  institutionType: 'Bank' | 'Microfinance' | 'Insurance';
 }
 
 export interface CreateBankDto {
@@ -173,7 +173,7 @@ export interface CreateBankDto {
   fees: string;
   digitalOption: boolean;
   rating: number;
-  institutionType: 'Bank' | 'Microfinance';
+  institutionType: 'Bank' | 'Microfinance' | 'Insurance';
 }
 
 export interface TenderDto {
@@ -229,7 +229,7 @@ export interface ApplicationDto {
   tenderTitle: string;
   tenderNumber: string;
   bankName: string;
-  bankInstitutionType?: 'Bank' | 'Microfinance';
+  bankInstitutionType?: 'Bank' | 'Microfinance' | 'Insurance';
   status: string;
   rejectionReason?: string;
   documentUrl?: string;
@@ -258,9 +258,9 @@ export interface CreateApplicationDto {
   phoneNumber: string;
   contactEmail: string;
   physicalAddress: string;
+  kraPin?: string;
   annualRevenue?: number;
   companyNetWorth?: number;
-  bankAccountNumber?: string;
 }
 
 export interface UpdateStatusDto {
@@ -362,6 +362,31 @@ export interface ScrapedTenderListParams {
   subCategory?: string;
   procurementMethod?: string;
 }
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+export interface AnalyticsDashboard {
+  summary: {
+    totalApplications: number;
+    totalUsers: number;
+    uniqueCompanies: number;
+    totalBondValue: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+  };
+  byCategory:    { category: string;    count: number }[];
+  byInstitution: { institution: string; count: number }[];
+  byStatus:      { status: string;      count: number }[];
+  byMonth:       { month: string;       count: number }[];
+  topEntities:   { entity: string;      count: number }[];
+}
+
+export const analyticsApi = {
+  getDashboard: () => request<AnalyticsDashboard>('/api/analytics'),
+};
+
+// ── Scraped Tenders ───────────────────────────────────────────────────────────
 
 export const scrapedTendersApi = {
   list: (params?: ScrapedTenderListParams) => {

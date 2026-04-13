@@ -15,16 +15,16 @@ import { Toaster } from './ui/sonner';
 import { extractBackendErrors, type BackendErrors } from '../utils/formErrors';
 
 const STEPS = [
-  { number: 1, title: 'Company Information', icon: Building2 },
-  { number: 2, title: 'Financial Details',   icon: DollarSign },
-  { number: 3, title: 'Document Upload',     icon: Upload },
-  { number: 4, title: 'Review & Submit',     icon: FileText },
+  { number: 1, title: 'Applicant Details',  icon: Building2 },
+  { number: 2, title: 'Financial Details',  icon: DollarSign },
+  { number: 3, title: 'Document Upload',    icon: Upload },
+  { number: 4, title: 'Review & Submit',    icon: FileText },
 ];
 
 const INITIAL_FORM = {
-  companyName: '', registrationNumber: '', contactPerson: '',
+  companyName: '', registrationNumber: '', kraPin: '', contactPerson: '',
   email: '', phone: '', address: '',
-  annualRevenue: '', netWorth: '', bankAccount: '',
+  annualRevenue: '', netWorth: '',
 };
 
 const INITIAL_FILES: DocumentFiles = {
@@ -185,7 +185,7 @@ export function BidBondForm() {
         physicalAddress: formData.address,
         annualRevenue: formData.annualRevenue ? parseFloat(formData.annualRevenue) : undefined,
         companyNetWorth: formData.netWorth ? parseFloat(formData.netWorth) : undefined,
-        bankAccountNumber: formData.bankAccount || undefined,
+        kraPin: formData.kraPin || undefined,
       });
 
       // Upload documents
@@ -211,7 +211,7 @@ export function BidBondForm() {
         setErrors(backendErrors);
         // Jump to first step that has errors
         const step1 = ['CompanyName','BusinessRegistrationNumber','ContactPerson','PhoneNumber','ContactEmail','PhysicalAddress'];
-        const step2 = ['AnnualRevenue','CompanyNetWorth','BankAccountNumber'];
+        const step2 = ['AnnualRevenue','CompanyNetWorth'];
         if (step1.some(f => backendErrors[f])) setCurrentStep(1);
         else if (step2.some(f => backendErrors[f])) setCurrentStep(2);
         toast.error('Please fix the errors highlighted on the form.');
@@ -230,7 +230,6 @@ export function BidBondForm() {
         <FinancialDetailsStep
           annualRevenue={formData.annualRevenue}
           netWorth={formData.netWorth}
-          bankAccount={formData.bankAccount}
           bankName={bank.name}
           bondAmount={tender.bidBondAmount ?? 0}
           processingFee={tryParseAmount(bank.fees)}
@@ -259,7 +258,7 @@ export function BidBondForm() {
       <Toaster />
 
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
           <Button variant="ghost" onClick={() => navigate(`/tender/${id}/banks`, { state: { tender } })} className="gap-2 hover:bg-slate-100">
             <ArrowLeft className="w-4 h-4" />
             Back to Provider Selection

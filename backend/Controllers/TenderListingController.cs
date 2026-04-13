@@ -40,6 +40,8 @@ public class TenderListingController(ScrapedDbContext db) : ControllerBase
         {
             if (p.SubCategory == "Services")
                 query = query.Where(t => t.SubCategory == "Services" || t.SubCategory == "Non Consultancy Services");
+            else if (p.SubCategory == "Works")
+                query = query.Where(t => t.SubCategory == "Works" || t.SubCategory == "Construction");
             else
                 query = query.Where(t => t.SubCategory == p.SubCategory);
         }
@@ -49,7 +51,7 @@ public class TenderListingController(ScrapedDbContext db) : ControllerBase
 
         var total = await query.CountAsync();
         var items = await query
-            .OrderByDescending(t => t.DocumentDetail != null && t.DocumentDetail.BidBondAmount != null && t.DocumentDetail.BidBondAmount != "0" && t.DocumentDetail.BidBondAmount != "" ? 1 : 0)
+            .OrderByDescending(t => t.BidBondAmount != null && t.BidBondAmount > 0 ? 1 : 0)
             .ThenByDescending(t => t.CreatedAt)
             .Skip((p.Page - 1) * p.PageSize)
             .Take(p.PageSize)

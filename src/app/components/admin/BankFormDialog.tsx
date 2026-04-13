@@ -25,7 +25,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editingBank ? 'Edit Bank' : 'Add New Bank'}</DialogTitle>
+          <DialogTitle>{editingBank ? 'Edit Institution' : 'Add Institution'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -43,7 +43,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
             <Label>Institution Type *</Label>
             <Select
               value={formData.institutionType ?? 'Bank'}
-              onValueChange={v => set('institutionType', v as 'Bank' | 'Microfinance')}
+              onValueChange={v => set('institutionType', v as 'Bank' | 'Microfinance' | 'Insurance')}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
@@ -51,6 +51,7 @@ export function BankFormDialog({ open, onOpenChange, editingBank, formData, onFo
               <SelectContent>
                 <SelectItem value="Bank">Bank</SelectItem>
                 <SelectItem value="Microfinance">Microfinance</SelectItem>
+                <SelectItem value="Insurance">Insurance</SelectItem>
               </SelectContent>
             </Select>
           </div>

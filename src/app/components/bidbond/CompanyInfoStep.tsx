@@ -6,6 +6,7 @@ import { getFieldError, type BackendErrors } from '../../utils/formErrors';
 interface FormFields {
   companyName: string;
   registrationNumber: string;
+  kraPin: string;
   contactPerson: string;
   email: string;
   phone: string;
@@ -31,28 +32,41 @@ export function CompanyInfoStep({ formData, onChange, errors }: Props) {
   const e = (f: string) => getFieldError(errors, f);
   return (
     <div className="space-y-5">
-<div className="space-y-1.5">
-        <Label htmlFor="companyName" className="text-sm font-medium">Company Name *</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="companyName" className="text-sm font-medium">Company / Business Name *</Label>
         <Input
           id="companyName"
           value={formData.companyName}
           onChange={(e) => onChange('companyName', e.target.value)}
-          placeholder="Enter your company name"
+          placeholder="Enter your company or business name"
           className={fieldClass(e('companyName'))}
         />
         <FieldError msg={e('companyName')} />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="registrationNumber" className="text-sm font-medium">Business Registration Number *</Label>
-        <Input
-          id="registrationNumber"
-          value={formData.registrationNumber}
-          onChange={(e) => onChange('registrationNumber', e.target.value)}
-          placeholder="e.g., PVT-1234567890"
-          className={fieldClass(e('registrationNumber'))}
-        />
-        <FieldError msg={e('registrationNumber')} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="registrationNumber" className="text-sm font-medium">Business Registration Number *</Label>
+          <Input
+            id="registrationNumber"
+            value={formData.registrationNumber}
+            onChange={(e) => onChange('registrationNumber', e.target.value)}
+            placeholder="e.g., PVT-1234567890"
+            className={fieldClass(e('registrationNumber'))}
+          />
+          <FieldError msg={e('registrationNumber')} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="kraPin" className="text-sm font-medium">KRA PIN *</Label>
+          <Input
+            id="kraPin"
+            value={formData.kraPin}
+            onChange={(e) => onChange('kraPin', e.target.value)}
+            placeholder="e.g., A001234567B"
+            className={fieldClass(e('kraPin'))}
+          />
+          <FieldError msg={e('kraPin')} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

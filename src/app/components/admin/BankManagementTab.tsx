@@ -17,10 +17,10 @@ export function BankManagementTab({ banks, onAdd, onEdit, onDelete, onToggleActi
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Bank Management</CardTitle>
+          <CardTitle>Institution Management</CardTitle>
           <Button onClick={onAdd}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Bank
+            Add Institution
           </Button>
         </div>
       </CardHeader>

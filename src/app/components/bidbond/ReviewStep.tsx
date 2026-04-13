@@ -6,6 +6,7 @@ import type { DocumentFiles } from './DocumentUploadStep';
 interface FormSnapshot {
   companyName: string;
   registrationNumber: string;
+  kraPin: string;
   contactPerson: string;
   email: string;
 }
@@ -60,12 +61,14 @@ export function ReviewStep({ formData, tenderTitle, bankName, bondAmount, proces
         </div>
       </div>
 
-      {/* Company Information */}
+      {/* Applicant Details */}
       <div className="rounded-xl border p-6 space-y-1">
-        <h3 className="font-semibold text-slate-900 mb-4">Company Information</h3>
-        <SummaryRow label="Company Name" value={formData.companyName || 'Not provided'} />
+        <h3 className="font-semibold text-slate-900 mb-4">Applicant Details</h3>
+        <SummaryRow label="Company / Business Name" value={formData.companyName || 'Not provided'} />
         <Separator />
         <SummaryRow label="Registration Number" value={formData.registrationNumber || 'Not provided'} />
+        <Separator />
+        <SummaryRow label="KRA PIN" value={formData.kraPin || 'Not provided'} />
         <Separator />
         <SummaryRow label="Contact Person" value={formData.contactPerson || 'Not provided'} />
         <Separator />

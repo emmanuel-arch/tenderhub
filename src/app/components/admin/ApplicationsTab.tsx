@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Users, Building2, DollarSign, FileText, Loader2,
-  CheckCircle, XCircle, Clock, ChevronDown, Filter, Eye,
+  CheckCircle, XCircle, Clock, ChevronDown, Filter, Eye, AlertCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -33,6 +33,7 @@ export function ApplicationsTab() {
   const navigate = useNavigate();
   const [applications, setApplications] = useState<ApplicationDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [institutionFilter, setInstitutionFilter] = useState<InstitutionFilter>('all');
   const [search, setSearch] = useState('');
@@ -40,12 +41,16 @@ export function ApplicationsTab() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  useEffect(() => {
+  const loadApplications = () => {
+    setLoading(true);
+    setFetchError(null);
     applicationsApi.list()
       .then(res => setApplications(res.data))
-      .catch(err => toast.error('Failed to load applications', { description: err.message }))
+      .catch(err => setFetchError(err.message ?? 'Failed to load applications.'))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadApplications(); }, []);
 
   const handleUpdateStatus = async (app: ApplicationDto, status: string) => {
     const dto: UpdateStatusDto = {
@@ -180,7 +185,15 @@ export function ApplicationsTab() {
             </div>
           )}
 
-          {!loading && filtered.length === 0 && (
+          {!loading && fetchError && (
+            <div className="py-10 text-center">
+              <AlertCircle className="w-10 h-10 mx-auto text-red-500 mb-3" />
+              <p className="text-red-800 font-medium mb-4">{fetchError}</p>
+              <Button variant="outline" onClick={loadApplications}>Try Again</Button>
+            </div>
+          )}
+
+          {!loading && !fetchError && filtered.length === 0 && (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 mx-auto text-slate-400 mb-4" />
               <h3 className="font-semibold mb-2">No applications found</h3>
@@ -188,7 +201,7 @@ export function ApplicationsTab() {
             </div>
           )}
 
-          {!loading && (
+          {!loading && !fetchError && (
             <div className="space-y-3">
               {filtered.map(app => (
                 <div key={app.id} className="border rounded-lg overflow-hidden">

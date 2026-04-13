@@ -7,7 +7,6 @@ import { getFieldError, type BackendErrors } from '../../utils/formErrors';
 interface Props {
   annualRevenue: string;
   netWorth: string;
-  bankAccount: string;
   bankName: string;
   bondAmount: number;
   processingFee: number;
@@ -27,7 +26,6 @@ function fieldClass(error?: string) {
 export function FinancialDetailsStep({
   annualRevenue,
   netWorth,
-  bankAccount,
   bankName,
   bondAmount,
   processingFee,
@@ -75,20 +73,6 @@ export function FinancialDetailsStep({
         <FieldError msg={e('netWorth')} />
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="bankAccount" className="text-sm font-medium">Bank Account Number (with {bankName})</Label>
-        <Input
-          id="bankAccount"
-          value={bankAccount}
-          onChange={(e) => onChange('bankAccount', e.target.value)}
-          placeholder="Enter your account number"
-          className={fieldClass(e('bankAccount'))}
-        />
-        <FieldError msg={e('bankAccount')} />
-        <p className="text-sm text-slate-500">
-          If you don't have an account, one will be opened during processing
-        </p>
-      </div>
     </div>
   );
 }

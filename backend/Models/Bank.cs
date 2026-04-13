@@ -3,7 +3,8 @@ namespace TenderHub.API.Models;
 public enum InstitutionType
 {
     Bank,
-    Microfinance
+    Microfinance,
+    Insurance
 }
 
 public class Bank

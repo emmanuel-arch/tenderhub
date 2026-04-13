@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Shield, LogOut, Loader2 } from 'lucide-react';
+import { Shield, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { banksApi, BankDto, CreateBankDto } from '../services/api';
@@ -10,6 +10,7 @@ import { Toaster } from './ui/sonner';
 import { BankManagementTab } from './admin/BankManagementTab';
 import { BankFormDialog } from './admin/BankFormDialog';
 import { ApplicationsTab } from './admin/ApplicationsTab';
+import { AnalyticsTab } from './admin/AnalyticsTab';
 
 const DEFAULT_FORM: Partial<CreateBankDto> = {
   name: '',
@@ -27,17 +28,22 @@ export function AdminDashboard() {
 
   const [banks, setBanks] = useState<BankDto[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
+  const [banksError, setBanksError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<BankDto | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBankDto>>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const loadBanks = () => {
+    setLoadingBanks(true);
+    setBanksError(null);
     banksApi.list({ includeInactive: true })
       .then(setBanks)
-      .catch(err => toast.error('Failed to load banks', { description: err.message }))
+      .catch(err => setBanksError(err.message ?? 'Failed to load institutions.'))
       .finally(() => setLoadingBanks(false));
-  }, []);
+  };
+
+  useEffect(() => { loadBanks(); }, []);
 
   const openAddDialog = () => {
     setEditingBank(null);
@@ -149,17 +155,28 @@ export function AdminDashboard() {
         <Tabs defaultValue="applications" className="space-y-6">
           <TabsList>
             <TabsTrigger value="applications">All Applications</TabsTrigger>
-            <TabsTrigger value="banks">Bank Management</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="banks">Institution Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="applications">
             <ApplicationsTab />
           </TabsContent>
 
+          <TabsContent value="analytics">
+            <AnalyticsTab />
+          </TabsContent>
+
           <TabsContent value="banks">
             {loadingBanks ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-900" />
+              </div>
+            ) : banksError ? (
+              <div className="py-12 text-center">
+                <AlertCircle className="w-10 h-10 mx-auto text-red-500 mb-3" />
+                <p className="text-red-800 font-medium mb-4">{banksError}</p>
+                <Button variant="outline" onClick={loadBanks}>Try Again</Button>
               </div>
             ) : (
               <BankManagementTab

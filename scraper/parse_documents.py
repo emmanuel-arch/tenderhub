@@ -18,7 +18,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details, reset_failed_parses, reset_sparse_parses, reset_zero_bidbond_parses
+from db import ensure_table, ensure_doc_details_table, get_tenders_needing_parsing, save_document_details, reset_failed_parses, reset_sparse_parses, reset_zero_bidbond_parses, reset_low_bidbond_parses, reset_tiny_bidbond_parses
 from document_parser import parse_tender_document
 
 logging.basicConfig(
@@ -167,6 +167,9 @@ if __name__ == "__main__":
         reparse_failed = False
         reparse_empty = False
         reparse_zero_bidbond = False
+        reparse_low_bidbond = False
+        reparse_tiny_bidbond = False
+        reparse_bidbond_upto = None
 
         if "--reparse-failed" in args:
             reparse_failed = True
@@ -179,6 +182,23 @@ if __name__ == "__main__":
         if "--reparse-zero-bidbond" in args:
             reparse_zero_bidbond = True
             args.remove("--reparse-zero-bidbond")
+
+        if "--reparse-low-bidbond" in args:
+            reparse_low_bidbond = True
+            args.remove("--reparse-low-bidbond")
+
+        if "--reparse-tiny-bidbond" in args:
+            reparse_tiny_bidbond = True
+            args.remove("--reparse-tiny-bidbond")
+
+        if "--reparse-bidbond-upto" in args:
+            idx = args.index("--reparse-bidbond-upto")
+            if idx + 1 < len(args):
+                reparse_bidbond_upto = int(args.pop(idx + 1))
+                args.pop(idx)
+            else:
+                print("Usage: python parse_documents.py --reparse-bidbond-upto <MAX>")
+                sys.exit(1)
 
         if "--source" in args:
             idx = args.index("--source")
@@ -206,6 +226,15 @@ if __name__ == "__main__":
 
         if reparse_zero_bidbond:
             reset_zero_bidbond_parses(source=source)
+
+        if reparse_low_bidbond:
+            reset_low_bidbond_parses(source=source)
+
+        if reparse_tiny_bidbond:
+            reset_tiny_bidbond_parses(source=source)
+
+        if reparse_bidbond_upto is not None:
+            reset_low_bidbond_parses(source=source, min_val=0, max_val=reparse_bidbond_upto)
 
         limit = int(args[0]) if args else 50
         run_batch(limit, source=source, workers=workers)

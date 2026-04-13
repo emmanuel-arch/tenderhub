@@ -27,6 +27,14 @@ export function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              className="gap-1.5 bg-green-50 hover:bg-green-100 text-green-900 font-semibold border border-green-200 shadow-sm animate-pulse hover:animate-none hover:scale-105 transition-transform active:scale-95"
+              onClick={() => navigate(isAuthenticated ? '/apply' : '/login', { state: { from: { pathname: '/apply' } } })}
+            >
+              <Shield className="w-4 h-4" />
+              Apply for Bid Bond
+            </Button>
             {isAuthenticated ? (
               <>
                 <span className="text-sm text-slate-600">{user?.name}</span>
@@ -34,8 +42,8 @@ export function HomePage() {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => navigate('/login')}>Sign In</Button>
-                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white" onClick={() => navigate('/tenders')}>Browse Tenders</Button>
+                <Button variant="outline" size="sm" className="text-slate-600 border-slate-300" onClick={() => navigate('/login')}>Sign In</Button>
+                <Button size="sm" className="bg-slate-900 hover:bg-slate-800 text-white hover:scale-105 transition-transform active:scale-95" onClick={() => navigate('/tenders')}>Browse Tenders</Button>
               </>
             )}
           </div>
@@ -75,6 +83,15 @@ export function HomePage() {
                 >
                   Explore Tenders
                   <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="gap-2 border-slate-300 text-slate-700"
+                  onClick={() => navigate(isAuthenticated ? '/apply' : '/login', { state: { from: { pathname: '/apply' } } })}
+                >
+                  <Shield className="w-4 h-4" />
+                  Apply for Bid Bond
                 </Button>
                 <Button size="lg" variant="outline" className="border-slate-300 text-slate-700" onClick={() => navigate('/login')}>
                   Get Started

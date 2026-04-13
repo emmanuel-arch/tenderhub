@@ -251,6 +251,7 @@ export function TenderDetails() {
                     </Badge>
                   )}
                 </div>
+
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Key Details Grid */}
