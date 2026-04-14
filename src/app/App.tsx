@@ -12,6 +12,8 @@ import { Login } from './components/Login';
 import { ApplicationDetails } from './components/ApplicationDetails';
 import { HomePage } from './components/HomePage';
 import { DirectApply } from './components/DirectApply';
+import { VerifyEmail } from './components/VerifyEmail';
+import { ResetPassword } from './components/ResetPassword';
 
 function GoogleAnalytics() {
   const location = useLocation();
@@ -58,6 +60,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tenders" element={<TenderList />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/tender/:id" element={<TenderDetails />}     />
           <Route path="/tender/:id/banks" element={<PrivateRoute><BankSelection /></PrivateRoute>} />
           <Route path="/tender/:id/bid-bond/:bankId" element={<PrivateRoute><BidBondForm /></PrivateRoute>} />

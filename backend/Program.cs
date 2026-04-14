@@ -57,6 +57,8 @@ builder.Services.AddCors(options =>
 // ── Application Services ──────────────────────────────────────────────────────
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileService, LocalFileService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddHttpClient("Resend");
 
 // ── tenders.go.ke Sync ────────────────────────────────────────────────────────
 builder.Services.AddHttpClient("TendersGoKe", client =>

@@ -2,6 +2,13 @@
 **/bin/
 **/obj/
 
+# secrets — never commit these
+backend/appsettings.Development.json
+backend/.env
+
+# user-uploaded files (runtime data, not code)
+backend/uploads/
+
 # dependencies
 node_modules
 

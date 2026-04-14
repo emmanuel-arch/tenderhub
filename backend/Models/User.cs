@@ -7,6 +7,7 @@ public class User
     public string Name { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Client;
+    public bool EmailConfirmed { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Application> Applications { get; set; } = [];

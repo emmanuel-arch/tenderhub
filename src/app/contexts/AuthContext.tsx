@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, UserProfile } from '../services/api';
+import { authApi, RegisterResponse, UserProfile } from '../services/api';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -7,7 +7,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, adminCode?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, adminCode?: string) => Promise<RegisterResponse>;
   logout: () => void;
 }
 
@@ -39,11 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
-  const register = async (name: string, email: string, password: string, adminCode?: string) => {
+  const register = async (name: string, email: string, password: string, adminCode?: string): Promise<RegisterResponse> => {
     const res = await authApi.register(name, email, password, adminCode);
-    localStorage.setItem('auth_token', res.token);
-    localStorage.setItem('auth_user', JSON.stringify(res.user));
-    setUser(res.user);
+    // Registration no longer auto-logs in — user must verify email first
+    return res;
   };
 
   const logout = () => {
