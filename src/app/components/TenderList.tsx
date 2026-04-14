@@ -254,14 +254,14 @@ export function TenderList() {
           </Card>
 
           {/* ── Not listed banner ── */}
-          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
-            <p className="text-sm text-blue-800">
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-blue-900 bg-blue-900 px-4 py-3">
+            <p className="text-sm text-white">
               <span className="font-semibold">Can't find your tender?</span>{' '}
               If the tender you're looking for is not listed, you can apply for a bid bond directly.
             </p>
             <Button
               size="sm"
-              className="shrink-0 bg-blue-700 hover:bg-blue-800 text-white"
+              className="shrink-0 bg-white text-blue-900 hover:bg-blue-50"
               onClick={() => navigate('/apply')}
             >
               Apply for Bid Bond
