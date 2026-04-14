@@ -165,7 +165,7 @@ export function TenderList() {
                   ) : (
                     <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>Dashboard</Button>
                   )}
-                  <span className="text-sm text-slate-600 hidden sm:block">{user.name}</span>
+                  <span className="text-sm text-slate-700 font-medium hidden sm:flex items-center px-3 py-1 rounded-full border border-slate-200 bg-slate-50">{user.name}</span>
                   <Button variant="outline" size="sm" onClick={logout} className="gap-1.5">
                     <LogOut className="w-4 h-4" />
                     Logout
