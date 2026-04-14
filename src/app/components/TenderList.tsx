@@ -261,7 +261,7 @@ export function TenderList() {
             </p>
             <Button
               size="sm"
-              className="shrink-0 bg-white text-blue-900 hover:bg-blue-50"
+              className="shrink-0 bg-slate-900 text-white hover:bg-slate-800"
               onClick={() => navigate('/apply')}
             >
               Apply for Bid Bond
