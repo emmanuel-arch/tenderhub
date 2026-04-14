@@ -37,7 +37,12 @@ export function HomePage() {
             </Button>
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-slate-600">{user?.name}</span>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-slate-50">
+                  <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    {user?.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                  </div>
+                  <span className="text-sm text-slate-700 font-medium">{user?.name}</span>
+                </div>
                 <Button size="sm" variant="outline" onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}>Dashboard</Button>
               </>
             ) : (

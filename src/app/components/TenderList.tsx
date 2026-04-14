@@ -165,7 +165,12 @@ export function TenderList() {
                   ) : (
                     <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>Dashboard</Button>
                   )}
-                  <span className="text-sm text-slate-700 font-medium hidden sm:flex items-center px-3 py-1 rounded-full border border-slate-200 bg-slate-50">{user.name}</span>
+                  <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-slate-50">
+                    <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                      {user.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                    </div>
+                    <span className="text-sm text-slate-700 font-medium">{user.name}</span>
+                  </div>
                   <Button variant="outline" size="sm" onClick={logout} className="gap-1.5">
                     <LogOut className="w-4 h-4" />
                     Logout

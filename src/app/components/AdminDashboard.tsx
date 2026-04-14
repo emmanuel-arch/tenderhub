@@ -137,10 +137,15 @@ export function AdminDashboard() {
                 <p className="text-slate-500 text-sm">Institutions & platform overview</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm font-medium">{user?.name}</div>
-                <div className="text-xs text-slate-500">{user?.email}</div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-slate-50">
+                <div className="w-6 h-6 rounded-full bg-blue-900 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  {user?.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-slate-700 leading-tight">{user?.name}</div>
+                  <div className="text-xs text-slate-400 leading-tight">{user?.email}</div>
+                </div>
               </div>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />

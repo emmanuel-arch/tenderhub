@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { applicationsApi, type ApplicationDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -76,17 +75,15 @@ export function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Direct Apply CTA */}
-        <Card className="mb-6 border-blue-200 bg-blue-50">
-          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold text-blue-900">Have a tender not in our listings?</p>
-              <p className="text-sm text-blue-700">Apply for a bid bond directly — enter your tender details and get started.</p>
-            </div>
-            <Button onClick={() => navigate('/apply')} className="bg-blue-900 hover:bg-blue-800 shrink-0">
-              Apply Directly
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border border-blue-900 bg-blue-900 px-4 py-3">
+          <div>
+            <p className="font-semibold text-white">Have a tender not in our listings?</p>
+            <p className="text-sm text-blue-200">Apply for a bid bond directly — enter your tender details and get started.</p>
+          </div>
+          <Button onClick={() => navigate('/apply')} className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white">
+            Apply Directly
+          </Button>
+        </div>
 
         <StatsCards applications={applications} />
 
