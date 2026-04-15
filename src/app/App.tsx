@@ -16,6 +16,7 @@ import { VerifyEmail } from './components/VerifyEmail';
 import { ResetPassword } from './components/ResetPassword';
 import { Setup } from './components/Setup';
 import { ChangePassword } from './components/ChangePassword';
+import { NotFound } from './components/NotFound';
 
 function GoogleAnalytics() {
   const location = useLocation();
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/application/:id" element={<PrivateRoute><ApplicationDetails /></PrivateRoute>} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
