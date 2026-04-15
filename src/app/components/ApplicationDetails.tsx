@@ -12,7 +12,9 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
-  LogOut
+  LogOut,
+  Paperclip,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -236,6 +238,38 @@ export function ApplicationDetails() {
                   Your application is currently being reviewed by {application.bankName}. This typically takes 2-5 business days.
                 </AlertDescription>
               </Alert>
+            )}
+
+            {application.documents?.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Paperclip className="w-4 h-4" />
+                    Uploaded Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {application.documents.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between py-2 px-3 rounded-lg border border-slate-100 bg-slate-50">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-slate-800 truncate">{doc.name}</div>
+                          <div className="text-xs text-slate-400">{doc.fileName} · {(doc.fileSizeBytes / 1024).toFixed(0)} KB</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0 ml-3">
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-slate-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+                          <Eye className="w-3.5 h-3.5" /> View
+                        </a>
+                        <a href={doc.url} download={doc.fileName} className="flex items-center gap-1 text-xs text-slate-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
+                          <Download className="w-3.5 h-3.5" /> Download
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             )}
 
             <Card>

@@ -6,13 +6,14 @@ using TenderHub.API.Data;
 using TenderHub.API.DTOs.Applications;
 using TenderHub.API.DTOs.Common;
 using TenderHub.API.Models;
+using TenderHub.API.Services;
 
 namespace TenderHub.API.Controllers;
 
 [ApiController]
 [Route("api/applications")]
 [Authorize]
-public class ApplicationsController(ApplicationDbContext db) : ControllerBase
+public class ApplicationsController(ApplicationDbContext db, IFileService fileService) : ControllerBase
 {
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)
@@ -182,7 +183,7 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
     }
 
     // ── Mapping ──────────────────────────────────────────────────────────────
-    private static ApplicationDto ToDto(Application a) => new()
+    private ApplicationDto ToDto(Application a) => new()
     {
         Id = a.Id,
         UserId = a.UserId,
@@ -214,7 +215,8 @@ public class ApplicationsController(ApplicationDbContext db) : ControllerBase
             FileName = d.FileName,
             ContentType = d.ContentType,
             FileSizeBytes = d.FileSizeBytes,
-            UploadedAt = d.UploadedAt
+            UploadedAt = d.UploadedAt,
+            Url = fileService.GetFileUrl(d.StoragePath)
         }).ToList(),
         StatusHistory = a.StatusHistory
             .OrderBy(s => s.ChangedAt)

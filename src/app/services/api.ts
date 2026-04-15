@@ -340,6 +340,7 @@ export interface DocumentDto {
   contentType: string;
   fileSizeBytes: number;
   uploadedAt: string;
+  url: string;
 }
 
 export interface StatusHistoryDto {
