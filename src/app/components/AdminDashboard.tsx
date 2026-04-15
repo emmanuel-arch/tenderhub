@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Shield, LogOut, Loader2, AlertCircle } from 'lucide-react';
+import { Shield, LogOut, Loader2, AlertCircle, UserPlus } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { banksApi, BankDto, CreateBankDto } from '../services/api';
+import { banksApi, authApi, BankDto, CreateBankDto } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
@@ -11,6 +13,7 @@ import { BankManagementTab } from './admin/BankManagementTab';
 import { BankFormDialog } from './admin/BankFormDialog';
 import { ApplicationsTab } from './admin/ApplicationsTab';
 import { AnalyticsTab } from './admin/AnalyticsTab';
+import { UsersTab } from './admin/UsersTab';
 
 const DEFAULT_FORM: Partial<CreateBankDto> = {
   name: '',
@@ -24,7 +27,11 @@ const DEFAULT_FORM: Partial<CreateBankDto> = {
 
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
+
+  const [inviteName,    setInviteName]    = useState('');
+  const [inviteEmail,   setInviteEmail]   = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const [banks, setBanks] = useState<BankDto[]>([]);
   const [loadingBanks, setLoadingBanks] = useState(true);
@@ -33,6 +40,22 @@ export function AdminDashboard() {
   const [editingBank, setEditingBank] = useState<BankDto | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBankDto>>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
+
+  const handleInviteAdmin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!inviteName || !inviteEmail) return;
+    setInviteLoading(true);
+    try {
+      await authApi.inviteAdmin(inviteName, inviteEmail);
+      toast.success(`Invitation sent to ${inviteEmail}`);
+      setInviteName('');
+      setInviteEmail('');
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to send invitation.');
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   const loadBanks = () => {
     setLoadingBanks(true);
@@ -162,6 +185,15 @@ export function AdminDashboard() {
             <TabsTrigger value="applications">All Applications</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="banks">Institution Management</TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="users">Users</TabsTrigger>
+            )}
+            {isSuperAdmin && (
+              <TabsTrigger value="team" className="gap-1.5">
+                <UserPlus className="w-3.5 h-3.5" />
+                Invite Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="applications">
@@ -171,6 +203,54 @@ export function AdminDashboard() {
           <TabsContent value="analytics">
             <AnalyticsTab />
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="users">
+              <UsersTab />
+            </TabsContent>
+          )}
+
+          {isSuperAdmin && (
+            <TabsContent value="team">
+              <div className="max-w-md">
+                <h3 className="text-lg font-semibold text-slate-900 mb-1">Invite an Admin</h3>
+                <p className="text-sm text-slate-500 mb-6">
+                  Send an invitation email with a temporary password. The invited admin must change their password on first sign-in.
+                </p>
+                <form onSubmit={handleInviteAdmin} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="invite-name">Full name</Label>
+                    <Input
+                      id="invite-name"
+                      placeholder="Jane Doe"
+                      value={inviteName}
+                      onChange={e => setInviteName(e.target.value)}
+                      disabled={inviteLoading}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="invite-email">Email address</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      placeholder="jane@example.com"
+                      value={inviteEmail}
+                      onChange={e => setInviteEmail(e.target.value)}
+                      disabled={inviteLoading}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white gap-2" disabled={inviteLoading}>
+                    {inviteLoading
+                      ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending…</>
+                      : <><UserPlus className="w-4 h-4" />Send Invitation</>
+                    }
+                  </Button>
+                </form>
+              </div>
+            </TabsContent>
+          )}
 
           <TabsContent value="banks">
             {loadingBanks ? (

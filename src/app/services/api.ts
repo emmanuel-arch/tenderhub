@@ -89,6 +89,35 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ token, newPassword }),
     }),
+  inviteAdmin: (name: string, email: string) =>
+    request<{ message: string }>('/api/auth/invite-admin', {
+      method: 'POST',
+      body: JSON.stringify({ name, email }),
+    }),
+  changePassword: (newPassword: string) =>
+    request<{ message: string }>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    }),
+};
+
+// ── User Management ───────────────────────────────────────────────────────────
+
+export interface UserDto {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  emailConfirmed: boolean;
+  createdAt: string;
+}
+
+export const usersApi = {
+  list: () => request<UserDto[]>('/api/users'),
+  deactivate: (id: string) => request<{ message: string }>(`/api/users/${id}/deactivate`, { method: 'PATCH' }),
+  activate:   (id: string) => request<{ message: string }>(`/api/users/${id}/activate`,   { method: 'PATCH' }),
+  delete:     (id: string) => request<{ message: string }>(`/api/users/${id}`,             { method: 'DELETE' }),
 };
 
 // ── Banks ─────────────────────────────────────────────────────────────────────
@@ -185,6 +214,7 @@ export interface UserProfile {
   email: string;
   name: string;
   role: string;
+  mustChangePassword?: boolean;
 }
 
 export interface BankDto {

@@ -10,4 +10,8 @@ public interface IAuthService
     Task ResendVerificationAsync(string email);
     Task ForgotPasswordAsync(string email);
     Task ResetPasswordAsync(string token, string newPassword);
+    Task<bool> IsSetupDoneAsync();
+    Task SetupSuperAdminAsync(SetupRequest request);
+    Task InviteAdminAsync(InviteAdminRequest request);
+    Task ChangePasswordAsync(Guid userId, string newPassword);
 }

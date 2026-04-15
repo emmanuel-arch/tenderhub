@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TenderHub.API.DTOs.Auth;
 using TenderHub.API.Services;
@@ -98,6 +100,74 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             await authService.ResetPasswordAsync(request.Token, request.NewPassword);
             return Ok(new { message = "Password reset successfully. You can now sign in with your new password." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Returns whether initial setup has been completed.</summary>
+    [HttpGet("setup")]
+    [ProducesResponseType(200)]
+    public async Task<IActionResult> GetSetupStatus()
+    {
+        var done = await authService.IsSetupDoneAsync();
+        return Ok(new { setupDone = done });
+    }
+
+    /// <summary>Create the first super admin. Only works when no admins exist.</summary>
+    [HttpPost("setup")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(409)]
+    public async Task<IActionResult> Setup([FromBody] SetupRequest request)
+    {
+        try
+        {
+            await authService.SetupSuperAdminAsync(request);
+            return Ok(new { message = "Super admin created. You can now sign in." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Invite a new admin. SuperAdmin only.</summary>
+    [HttpPost("invite-admin")]
+    [Authorize(Roles = "SuperAdmin")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(409)]
+    public async Task<IActionResult> InviteAdmin([FromBody] InviteAdminRequest request)
+    {
+        try
+        {
+            await authService.InviteAdminAsync(request);
+            return Ok(new { message = $"Invitation sent to {request.Email}." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>Change password for the currently logged-in user.</summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            await authService.ChangePasswordAsync(userId, request.NewPassword);
+            return Ok(new { message = "Password changed successfully." });
         }
         catch (InvalidOperationException ex)
         {

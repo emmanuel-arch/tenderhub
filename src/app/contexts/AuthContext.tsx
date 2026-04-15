@@ -5,10 +5,12 @@ interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ mustChangePassword?: boolean }>;
   register: (name: string, email: string, password: string, adminCode?: string) => Promise<RegisterResponse>;
   logout: () => void;
+  refreshUser: (updated: UserProfile) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,6 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('auth_token', res.token);
     localStorage.setItem('auth_user', JSON.stringify(res.user));
     setUser(res.user);
+    return { mustChangePassword: res.user.mustChangePassword };
+  };
+
+  const refreshUser = (updated: UserProfile) => {
+    localStorage.setItem('auth_user', JSON.stringify(updated));
+    setUser(updated);
   };
 
   const register = async (name: string, email: string, password: string, adminCode?: string): Promise<RegisterResponse> => {
@@ -56,11 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!user,
-      isAdmin: user?.role?.toLowerCase() === 'admin',
+      isAdmin: user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'superadmin',
+      isSuperAdmin: user?.role?.toLowerCase() === 'superadmin',
       loading,
       login,
       register,
       logout,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

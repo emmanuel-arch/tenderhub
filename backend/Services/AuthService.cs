@@ -30,6 +30,9 @@ public class AuthService(
         if (!user.EmailConfirmed)
             throw new EmailNotConfirmedException(user.Email);
 
+        if (!user.IsActive)
+            throw new UnauthorizedAccessException("This account has been deactivated. Contact your administrator.");
+
         return BuildResponse(user);
     }
 
@@ -41,17 +44,12 @@ public class AuthService(
         if (exists)
             throw new InvalidOperationException("An account with this email already exists.");
 
-        var adminCode = config["Admin:RegistrationCode"];
-        var isAdmin = !string.IsNullOrWhiteSpace(adminCode)
-                      && !string.IsNullOrWhiteSpace(request.AdminCode)
-                      && request.AdminCode == adminCode;
-
         var user = new User
         {
             Email          = request.Email.ToLower(),
             Name           = request.Name,
             PasswordHash   = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            Role           = isAdmin ? UserRole.Admin : UserRole.Client,
+            Role           = UserRole.Client,
             EmailConfirmed = false,
         };
 
@@ -162,6 +160,74 @@ public class AuthService(
         await db.SaveChangesAsync();
     }
 
+    // ── Setup ─────────────────────────────────────────────────────────────────
+
+    public async Task<bool> IsSetupDoneAsync()
+    {
+        return await db.Users.AnyAsync(u => u.Role == UserRole.SuperAdmin || u.Role == UserRole.Admin);
+    }
+
+    public async Task SetupSuperAdminAsync(SetupRequest request)
+    {
+        var alreadySetup = await IsSetupDoneAsync();
+        if (alreadySetup)
+            throw new InvalidOperationException("Setup has already been completed.");
+
+        var user = new User
+        {
+            Email              = request.Email.ToLower(),
+            Name               = request.Name,
+            PasswordHash       = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role               = UserRole.SuperAdmin,
+            EmailConfirmed     = true,
+            MustChangePassword = false,
+        };
+
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+    }
+
+    // ── Invite Admin ─────────────────────────────────────────────────────────
+
+    public async Task InviteAdminAsync(InviteAdminRequest request)
+    {
+        var exists = await db.Users.AnyAsync(u => u.Email == request.Email.ToLower());
+        if (exists)
+            throw new InvalidOperationException("An account with this email already exists.");
+
+        var tempPassword = GenerateTempPassword();
+
+        var user = new User
+        {
+            Email              = request.Email.ToLower(),
+            Name               = request.Name,
+            PasswordHash       = BCrypt.Net.BCrypt.HashPassword(tempPassword),
+            Role               = UserRole.Admin,
+            EmailConfirmed     = true,
+            MustChangePassword = true,
+        };
+
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var appUrl   = config["AppUrl"]?.TrimEnd('/') ?? "http://localhost:5173";
+        var loginUrl = $"{appUrl}/login";
+
+        await emailService.SendAdminInviteEmailAsync(user.Email, user.Name, tempPassword, loginUrl);
+    }
+
+    // ── Change Password ───────────────────────────────────────────────────────
+
+    public async Task ChangePasswordAsync(Guid userId, string newPassword)
+    {
+        var user = await db.Users.FindAsync(userId)
+            ?? throw new InvalidOperationException("User not found.");
+
+        user.PasswordHash       = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.MustChangePassword = false;
+        await db.SaveChangesAsync();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task SendVerificationTokenAsync(User user)
@@ -187,6 +253,34 @@ public class AuthService(
         await emailService.SendVerificationEmailAsync(user.Email, user.Name, verificationUrl);
     }
 
+    private static string GenerateTempPassword()
+    {
+        const string upper   = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+        const string lower   = "abcdefghjkmnpqrstuvwxyz";
+        const string digits  = "23456789";
+        const string special = "@#$!%";
+        const string all     = upper + lower + digits + special;
+
+        var rng = RandomNumberGenerator.GetBytes(12);
+        // Guarantee at least one of each required character class
+        var chars = new char[12];
+        chars[0] = upper[rng[0]   % upper.Length];
+        chars[1] = lower[rng[1]   % lower.Length];
+        chars[2] = digits[rng[2]  % digits.Length];
+        chars[3] = special[rng[3] % special.Length];
+        for (int i = 4; i < 12; i++)
+            chars[i] = all[rng[i] % all.Length];
+
+        // Shuffle
+        var shuffleBytes = RandomNumberGenerator.GetBytes(12);
+        for (int i = chars.Length - 1; i > 0; i--)
+        {
+            int j = shuffleBytes[i] % (i + 1);
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+        return new string(chars);
+    }
+
     private static string HashToken(string rawToken)
     {
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawToken));
@@ -204,10 +298,11 @@ public class AuthService(
             ExpiresAt = expiry,
             User = new UserProfile
             {
-                Id    = user.Id,
-                Email = user.Email,
-                Name  = user.Name,
-                Role  = user.Role.ToString()
+                Id                 = user.Id,
+                Email              = user.Email,
+                Name               = user.Name,
+                Role               = user.Role.ToString(),
+                MustChangePassword = user.MustChangePassword,
             }
         };
     }

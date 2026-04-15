@@ -14,6 +14,8 @@ import { HomePage } from './components/HomePage';
 import { DirectApply } from './components/DirectApply';
 import { VerifyEmail } from './components/VerifyEmail';
 import { ResetPassword } from './components/ResetPassword';
+import { Setup } from './components/Setup';
+import { ChangePassword } from './components/ChangePassword';
 
 function GoogleAnalytics() {
   const location = useLocation();
@@ -48,7 +50,7 @@ function AdminRoute({ children }: { children: ReactNode }) {
   if (loading) return <PageLoader />;
   if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
-  return <>{children     }</>;
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -60,9 +62,11 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/tenders" element={<TenderList />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/setup" element={<Setup />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/tender/:id" element={<TenderDetails />}     />
+          <Route path="/change-password" element={<PrivateRoute><ChangePassword /></PrivateRoute>} />
+          <Route path="/tender/:id" element={<TenderDetails />} />
           <Route path="/tender/:id/banks" element={<PrivateRoute><BankSelection /></PrivateRoute>} />
           <Route path="/tender/:id/bid-bond/:bankId" element={<PrivateRoute><BidBondForm /></PrivateRoute>} />
           <Route path="/apply" element={<PrivateRoute><DirectApply /></PrivateRoute>} />

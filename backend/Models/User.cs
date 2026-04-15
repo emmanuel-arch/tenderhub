@@ -8,6 +8,8 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public UserRole Role { get; set; } = UserRole.Client;
     public bool EmailConfirmed { get; set; } = false;
+    public bool MustChangePassword { get; set; } = false;
+    public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Application> Applications { get; set; } = [];
@@ -16,5 +18,6 @@ public class User
 public enum UserRole
 {
     Client,
-    Admin
+    Admin,
+    SuperAdmin
 }

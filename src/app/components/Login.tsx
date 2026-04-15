@@ -7,14 +7,12 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import {
-  Mail, Lock, User, KeyRound, ArrowRight, ChevronLeft,
-  FileText, Shield, Eye, EyeOff, MailCheck, RefreshCw
+  Mail, Lock, User, ArrowRight, ChevronLeft,
+  FileText, Eye, EyeOff, MailCheck, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Toaster } from './ui/sonner';
 import { LoginLeftPanel } from './auth/LoginLeftPanel';
-
-type Role = 'client' | 'admin';
 
 export function Login() {
   const navigate = useNavigate();
@@ -43,8 +41,6 @@ export function Login() {
   const [regEmail, setRegEmail]       = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm]   = useState('');
-  const [regRole, setRegRole]         = useState<Role>('client');
-  const [adminCode, setAdminCode]     = useState('');
   const [regLoading, setRegLoading]   = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [showRegPw, setShowRegPw]     = useState(false);
@@ -52,8 +48,13 @@ export function Login() {
   useEffect(() => {
     if (isAuthenticated) {
       const stored = localStorage.getItem('auth_user');
-      const role = stored ? JSON.parse(stored).role?.toLowerCase() : '';
-      navigate(role === 'admin' ? '/admin' : from, { replace: true });
+      const parsed = stored ? JSON.parse(stored) : null;
+      const role = parsed?.role?.toLowerCase() ?? '';
+      if (parsed?.mustChangePassword) {
+        navigate('/change-password', { replace: true });
+      } else {
+        navigate(role === 'admin' || role === 'superadmin' ? '/admin' : from, { replace: true });
+      }
     }
   }, [isAuthenticated, navigate, from]);
 
@@ -68,11 +69,15 @@ export function Login() {
     setLoginLoading(true);
     setUnverifiedEmail(null);
     try {
-      await login(loginEmail, loginPassword);
+      const result = await login(loginEmail, loginPassword);
       toast.success('Login successful!');
-      const stored = localStorage.getItem('auth_user');
-      const role = stored ? JSON.parse(stored).role?.toLowerCase() : '';
-      navigate(role === 'admin' ? '/admin' : from);
+      if (result?.mustChangePassword) {
+        navigate('/change-password', { replace: true });
+      } else {
+        const stored = localStorage.getItem('auth_user');
+        const role = stored ? JSON.parse(stored).role?.toLowerCase() : '';
+        navigate(role === 'admin' || role === 'superadmin' ? '/admin' : from);
+      }
     } catch (err: any) {
       if (err instanceof ApiError && err.errorCode === 'EMAIL_NOT_CONFIRMED') {
         setUnverifiedEmail(err.errorEmail ?? loginEmail);
@@ -107,13 +112,9 @@ export function Login() {
       toast.error('Password mismatch', { description: 'Passwords do not match.' });
       return;
     }
-    if (regRole === 'admin' && !adminCode) {
-      toast.error('Admin code required', { description: 'Please enter the admin registration code.' });
-      return;
-    }
     setRegLoading(true);
     try {
-      const res = await register(regName, regEmail, regPassword, regRole === 'admin' ? adminCode : undefined);
+      const res = await register(regName, regEmail, regPassword);
       setCheckEmailFor(res.email);
     } catch (err: any) {
       toast.error('Registration failed', { description: err.message });
@@ -397,31 +398,6 @@ export function Login() {
 
                   {/* ── Create Account ── */}
                   <TabsContent value="register">
-                    {/* Role selector */}
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {(['client', 'admin'] as Role[]).map(role => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setRegRole(role)}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
-                            regRole === role
-                              ? 'border-slate-900 bg-slate-50'
-                              : 'border-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          {role === 'client'
-                            ? <FileText className={`w-5 h-5 ${regRole === role ? 'text-slate-900' : 'text-slate-400'}`} />
-                            : <Shield className={`w-5 h-5 ${regRole === role ? 'text-slate-900' : 'text-slate-400'}`} />
-                          }
-                          <div className="text-center">
-                            <div className={`font-semibold text-sm capitalize ${regRole === role ? 'text-slate-900' : 'text-slate-400'}`}>{role}</div>
-                            <div className="text-xs text-slate-400">{role === 'client' ? 'Apply for bid bonds' : 'Manage platform'}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
                     <form onSubmit={handleRegister} className="space-y-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="reg-name">Full Name</Label>
@@ -461,17 +437,6 @@ export function Login() {
                           )}
                         </div>
                       </div>
-
-                      {regRole === 'admin' && (
-                        <div className="space-y-1.5">
-                          <Label htmlFor="admin-code">Admin Code</Label>
-                          <div className="relative">
-                            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                            <Input id="admin-code" type="password" placeholder="Enter admin registration code" value={adminCode} onChange={e => setAdminCode(e.target.value)} className="pl-10 h-11" disabled={regLoading} />
-                          </div>
-                          <p className="text-xs text-slate-400">Obtain this from your system administrator</p>
-                        </div>
-                      )}
 
                       <Button type="submit" className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white gap-2 mt-1" disabled={regLoading}>
                         {regLoading

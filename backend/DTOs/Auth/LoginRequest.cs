@@ -19,13 +19,8 @@ public class RegisterRequest
     [Required, MinLength(2)]
     public string Name { get; set; } = string.Empty;
 
-    [Required, MinLength(6)]
+    [Required, MinLength(7)]
     public string Password { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Optional. If this matches Admin:RegistrationCode in config, the account is created as Admin.
-    /// </summary>
-    public string? AdminCode { get; set; }
 }
 
 public class RegisterResponse
@@ -58,6 +53,33 @@ public class ResetPasswordRequest
     [Required]
     public string Token { get; set; } = string.Empty;
 
-    [Required, MinLength(6)]
+    [Required, MinLength(7)]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
+public class SetupRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required, MinLength(2)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required, MinLength(7)]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class InviteAdminRequest
+{
+    [Required, EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [Required, MinLength(2)]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class ChangePasswordRequest
+{
+    [Required, MinLength(7)]
     public string NewPassword { get; set; } = string.Empty;
 }

@@ -58,6 +58,34 @@ public class EmailService(
         return SendAsync(toEmail, toName, subject, body);
     }
 
+    public Task SendAdminInviteEmailAsync(string toEmail, string toName, string tempPassword, string loginUrl)
+    {
+        logger.LogInformation("=== ADMIN INVITE ===");
+        logger.LogInformation("To:   {Email}", toEmail);
+        logger.LogInformation("Temp: {Password}", tempPassword);
+        logger.LogInformation("Link: {Url}", loginUrl);
+        logger.LogInformation("====================");
+
+        var subject = "You've been invited as a TenderHub Kenya Admin";
+        var body = $"""
+            Hi {toName},
+
+            You have been invited to join TenderHub Kenya as an administrator.
+
+            Your login credentials:
+              Email:    {toEmail}
+              Password: {tempPassword}
+
+            Sign in here: {loginUrl}
+
+            You will be required to change your password after signing in for the first time.
+
+            — TenderHub Kenya Team
+            """;
+
+        return SendAsync(toEmail, toName, subject, body);
+    }
+
     // ── Shared sender ─────────────────────────────────────────────────────────
 
     private async Task SendAsync(string toEmail, string toName, string subject, string body)
