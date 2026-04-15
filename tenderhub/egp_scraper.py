@@ -3,12 +3,7 @@
 Source: https://egpkenya.go.ke/
 Uses Playwright to load the Angular SPA, intercepts the JSON API response
 (dashboard-tender-details), then paginates through all pages to collect
-every active tender.
-
-Each tender from the API contains:
-  tenderdetailid, tendertitle, tenderrefno, procuringEntity,
-  procurementCategory, procurementMethod,
-  bidsubmissionstartdate, bidsubmissionenddate
+every ACTIVE (non-expired) tender.
 """
 
 import logging
@@ -23,11 +18,11 @@ log = logging.getLogger(__name__)
 SOURCE = "EGP"
 BASE_URL = "https://egpkenya.go.ke"
 LOAD_TIMEOUT = 60_000
-PAGE_WAIT = 6000  # ms to wait after clicking a page
-MAX_RETRIES = 3   # retries per page on failure
+PAGE_WAIT = 6000
+MAX_RETRIES = 3
 
 
-def _parse_datetime(text: str):
+def _parse_datetime(text: str) -> datetime | None:
     """Parse eGP date strings like '01/04/2026 18:00:00'."""
     text = text.strip()
     for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%d/%m/%Y"):
@@ -38,8 +33,13 @@ def _parse_datetime(text: str):
     return None
 
 
+def _is_expired(end_date: datetime | None) -> bool:
+    if end_date is None:
+        return False
+    return end_date < datetime.now()
+
+
 def _clean_entity(raw: str) -> str:
-    """Clean up the procuring entity string (remove non-breaking spaces etc)."""
     return re.sub(r"\s+", " ", raw.replace("\xa0", " ")).strip()
 
 
@@ -57,14 +57,12 @@ def _build_tender_dict(item: dict) -> dict:
     start_date = _parse_datetime(start_str) if start_str else None
     end_date = _parse_datetime(end_str) if end_str else None
 
-    # Map procurement category to subcategory
     sub_map = {
         "works": "Works", "goods": "Goods", "services": "Services",
         "consultancy services": "Consultancy", "consultancy": "Consultancy",
     }
     sub_category = sub_map.get(category.lower(), category) if category else None
 
-    # Build the view-tender-notice URL
     tender_notice_url = (
         f"{BASE_URL}/tender/view-tender-notice/{tender_id}"
         if tender_id else BASE_URL
@@ -93,11 +91,12 @@ def _build_tender_dict(item: dict) -> dict:
 
 
 def scrape_egp() -> list[dict]:
-    """Scrape all active tenders from eGP Kenya by intercepting the API."""
+    """Scrape all active (non-expired) tenders from eGP Kenya by intercepting the API."""
     log.info("Scraping eGP Kenya tenders from %s (Playwright + API intercept)", EGP_URL)
 
     all_tenders: list[dict] = []
     seen_ids: set[int] = set()
+    expired_count = 0
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -108,7 +107,6 @@ def scrape_egp() -> list[dict]:
         ))
         pw_page = ctx.new_page()
 
-        # Intercept the dashboard-tender-details API responses
         api_responses: list[dict] = []
 
         def on_response(resp):
@@ -120,7 +118,6 @@ def scrape_egp() -> list[dict]:
 
         pw_page.on("response", on_response)
 
-        # Load the page
         try:
             pw_page.goto(EGP_URL, wait_until="domcontentloaded", timeout=LOAD_TIMEOUT)
             pw_page.wait_for_timeout(PAGE_WAIT)
@@ -129,7 +126,6 @@ def scrape_egp() -> list[dict]:
             browser.close()
             return all_tenders
 
-        # Process page 1 response
         if not api_responses:
             log.error("No API response intercepted on page load.")
             browser.close()
@@ -143,16 +139,18 @@ def scrape_egp() -> list[dict]:
             tid = item.get("tenderdetailid")
             if tid and tid not in seen_ids:
                 seen_ids.add(tid)
-                all_tenders.append(_build_tender_dict(item))
+                td = _build_tender_dict(item)
+                if _is_expired(td["end_date"]):
+                    expired_count += 1
+                    continue
+                all_tenders.append(td)
 
         log.info("eGP page 1: %d tenders (total active: %d)", len(page1_tenders), total_active)
 
-        # Calculate total pages (5 per page based on observation)
         per_page = len(page1_tenders) or 5
         total_pages = (total_active + per_page - 1) // per_page
         log.info("eGP: need to paginate through %d pages", total_pages)
 
-        # Paginate through remaining pages
         current_page = 1
         consecutive_empty = 0
 
@@ -160,7 +158,6 @@ def scrape_egp() -> list[dict]:
             current_page += 1
             api_responses.clear()
 
-            # Click the "»" (next) button with retries
             page_ok = False
             for attempt in range(MAX_RETRIES):
                 try:
@@ -187,7 +184,6 @@ def scrape_egp() -> list[dict]:
                         )
 
             if not page_ok:
-                # Check if the "»" button is disabled (= we are on the last page)
                 disabled = pw_page.locator(
                     "li.page-item.disabled a.page-link:has-text('»')"
                 ).count()
@@ -197,7 +193,6 @@ def scrape_egp() -> list[dict]:
                     log.warning("eGP: Pagination stopped unexpectedly at page %d.", current_page - 1)
                 break
 
-            # Process the response for this page
             if api_responses:
                 page_data = api_responses[-1].get("respData", {})
                 page_tenders = page_data.get("tenderDetails", [])
@@ -214,11 +209,15 @@ def scrape_egp() -> list[dict]:
                     tid = item.get("tenderdetailid")
                     if tid and tid not in seen_ids:
                         seen_ids.add(tid)
-                        all_tenders.append(_build_tender_dict(item))
+                        td = _build_tender_dict(item)
+                        if _is_expired(td["end_date"]):
+                            expired_count += 1
+                            continue
+                        all_tenders.append(td)
 
                 if current_page % 20 == 0:
                     log.info(
-                        "eGP page %d/%d: collected %d total tenders",
+                        "eGP page %d/%d: collected %d open tenders",
                         current_page, total_pages, len(all_tenders),
                     )
             else:
@@ -228,5 +227,8 @@ def scrape_egp() -> list[dict]:
 
         browser.close()
 
-    log.info("eGP: scraped %d tenders total across %d pages.", len(all_tenders), current_page)
+    log.info(
+        "eGP: scraped %d open tenders total (%d expired skipped) across %d pages.",
+        len(all_tenders), expired_count, current_page,
+    )
     return all_tenders

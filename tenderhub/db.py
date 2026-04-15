@@ -1,10 +1,7 @@
 """Database helper – connects to SQL Server and inserts scraped tenders."""
-from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-
 import pyodbc
 from config import DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD
 
@@ -19,7 +16,7 @@ _CONN_STR = (
     "Encrypt=yes;TrustServerCertificate=yes;"
 )
 
-# ---------- schema bootstrap ---------------------------------------------------
+# ── Schema bootstrap ────────────────────────────────────────────────────────
 
 _CREATE_TABLE_SQL = """
 IF NOT EXISTS (
@@ -69,7 +66,7 @@ def ensure_table():
     log.info("ScrapedTenders table ready.")
 
 
-# ---------- insert helpers ------------------------------------------------------
+# ── Insert helpers ───────────────────────────────────────────────────────────
 
 _INSERT_SQL = """
 INSERT INTO ScrapedTenders (
@@ -85,13 +82,6 @@ _EXISTS_SQL = """
 SELECT 1 FROM ScrapedTenders WHERE Source = ? AND Title = ?
 """
 
-
-def tender_exists(cursor, source: str, title: str) -> bool:
-    cursor.execute(_EXISTS_SQL, source, title)
-    return cursor.fetchone() is not None
-
-
-# Max column widths to prevent truncation errors
 _MAX_LENGTHS = {
     "source": 50, "external_id": 200, "title": 500, "tender_number": 200,
     "procuring_entity": 300, "category": 50, "sub_category": 50,
@@ -99,8 +89,12 @@ _MAX_LENGTHS = {
 }
 
 
+def tender_exists(cursor, source: str, title: str) -> bool:
+    cursor.execute(_EXISTS_SQL, source, title)
+    return cursor.fetchone() is not None
+
+
 def _truncate(tender: dict) -> dict:
-    """Truncate string values that exceed column widths."""
     for key, max_len in _MAX_LENGTHS.items():
         val = tender.get(key)
         if isinstance(val, str) and len(val) > max_len:
@@ -109,7 +103,6 @@ def _truncate(tender: dict) -> dict:
 
 
 def insert_tender(cursor, tender: dict):
-    """Insert a single tender dict. Caller must commit."""
     tender = _truncate(tender)
     cursor.execute(
         _INSERT_SQL,
@@ -135,30 +128,40 @@ def insert_tender(cursor, tender: dict):
 
 
 def save_tenders(tenders: list[dict]) -> int:
-    """Save a batch of tender dicts, skipping duplicates. Returns count of new rows."""
     if not tenders:
         return 0
-
     inserted = 0
-    skipped_expired = 0
     with get_connection() as conn:
         cur = conn.cursor()
         for t in tenders:
-            deadline = t.get("deadline")
-            if deadline and deadline < datetime.now(timezone.utc).replace(tzinfo=None):
-                log.debug("Skipping expired tender: %s", t["title"])
-                skipped_expired += 1
+            # Log tender data for debugging
+            log.debug("Processing tender: %s", json.dumps(t, default=str))
+
+            # Check for missing or malformed key fields
+            missing_fields = [k for k in ["source", "title"] if not t.get(k)]
+            if missing_fields:
+                log.warning("Skipping tender due to missing fields %s: %s", missing_fields, t)
                 continue
-            if tender_exists(cur, t["source"], t["title"]):
-                log.debug("Skipping duplicate: %s – %s", t["source"], t["title"])
+
+            # Enhanced uniqueness check: also check TenderNumber and ExternalId if present
+            exists = tender_exists(cur, t["source"], t["title"])
+            if not exists and t.get("external_id"):
+                cur.execute("SELECT 1 FROM ScrapedTenders WHERE Source = ? AND ExternalId = ?", t["source"], t["external_id"])
+                exists = cur.fetchone() is not None
+            if not exists and t.get("tender_number"):
+                cur.execute("SELECT 1 FROM ScrapedTenders WHERE Source = ? AND TenderNumber = ?", t["source"], t["tender_number"])
+                exists = cur.fetchone() is not None
+            if exists:
+                log.info("Skipped: already exists with source='%s', title='%s', external_id='%s', tender_number='%s'", t.get("source"), t.get("title"), t.get("external_id"), t.get("tender_number"))
                 continue
             try:
                 insert_tender(cur, t)
                 inserted += 1
-            except pyodbc.IntegrityError:
-                log.debug("Integrity error (duplicate): %s", t["title"])
+            except pyodbc.IntegrityError as e:
+                log.error("Integrity error (duplicate) for tender '%s': %s", t.get("title"), str(e))
+            except Exception as e:
+                log.exception("Failed to insert tender: %s", t)
         conn.commit()
-
     log.info("Inserted %d / %d tenders.", inserted, len(tenders))
     return inserted
 
@@ -174,8 +177,6 @@ BEGIN
     CREATE TABLE TenderDocumentDetails (
         Id                       UNIQUEIDENTIFIER DEFAULT NEWID() PRIMARY KEY,
         TenderId                 UNIQUEIDENTIFIER NOT NULL,
-
-        -- Section 1: Key Requirements
         BidBondAmount            NVARCHAR(200),
         BidBondForm              NVARCHAR(200),
         BidBondValidity          NVARCHAR(100),
@@ -187,34 +188,23 @@ BEGIN
         ClarificationDeadline    NVARCHAR(200),
         MandatorySiteVisit       BIT              DEFAULT 0,
         NumberOfBidCopies        NVARCHAR(50),
-
-        -- Section 2: Financial Qualification Thresholds
         MinAnnualTurnover        NVARCHAR(200),
         MinLiquidAssets          NVARCHAR(200),
         MinSingleContractValue   NVARCHAR(200),
         MinCombinedContractValue NVARCHAR(200),
         CashFlowRequirement      NVARCHAR(200),
         AuditedFinancialsYears   NVARCHAR(100),
-
-        -- Section 3: Key Personnel (JSON array)
         KeyPersonnel             NVARCHAR(MAX),
-
-        -- Section 4: Key Equipment (JSON array)
         KeyEquipment             NVARCHAR(MAX),
-
-        -- Raw extracted text for each section
         KeyRequirementsRaw       NVARCHAR(MAX),
         FinancialQualificationsRaw NVARCHAR(MAX),
         KeyPersonnelRaw          NVARCHAR(MAX),
         KeyEquipmentRaw          NVARCHAR(MAX),
-
-        -- Metadata
         DocumentParsed           BIT              DEFAULT 0,
         ParsedDocumentUrl        NVARCHAR(MAX),
         ParseError               NVARCHAR(MAX),
         CreatedAt                DATETIME2        DEFAULT GETUTCDATE(),
         UpdatedAt                DATETIME2        DEFAULT GETUTCDATE(),
-
         CONSTRAINT FK_TenderDocDetails_ScrapedTenders
             FOREIGN KEY (TenderId) REFERENCES ScrapedTenders(Id)
     );
@@ -226,7 +216,6 @@ END
 
 
 def ensure_doc_details_table():
-    """Create the TenderDocumentDetails table if it does not yet exist."""
     with get_connection() as conn:
         conn.execute(_CREATE_DOC_DETAILS_TABLE)
         conn.commit()
@@ -273,14 +262,12 @@ def _doc_detail_exists(cursor, tender_id: str) -> bool:
 
 
 def _trunc(val, max_len):
-    """Truncate a string to max_len if needed."""
     if isinstance(val, str) and len(val) > max_len:
         return val[:max_len]
     return val
 
 
 def save_document_details(tender_id: str, parsed: dict) -> bool:
-    """Save parsed document details for a tender. Returns True if saved/updated."""
     personnel_json = json.dumps(parsed.get("key_personnel", []), default=str)
     equipment_json = json.dumps(parsed.get("key_equipment", []), default=str)
 
@@ -328,11 +315,6 @@ def save_document_details(tender_id: str, parsed: dict) -> bool:
 
 
 def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> list[dict]:
-    """Return tenders that have a DocumentUrl but no parsed document details yet.
-    
-    Skips tenders that already have a TenderDocumentDetails row (even if parsing failed),
-    so failed parses are not retried automatically. Use --tender-id to retry a specific one.
-    """
     sql = """
     SELECT TOP (?) t.Id, t.Source, t.Title, t.DocumentUrl
     FROM ScrapedTenders t
@@ -340,7 +322,6 @@ def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> l
     WHERE t.DocumentUrl IS NOT NULL
       AND t.DocumentUrl <> ''
       AND d.Id IS NULL
-      AND (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
     """
     params = [limit]
     if source:
@@ -355,145 +336,3 @@ def get_tenders_needing_parsing(limit: int = 50, source: str | None = None) -> l
         {"id": str(row[0]), "source": row[1], "title": row[2], "document_url": row[3]}
         for row in rows
     ]
-
-
-def reset_sparse_parses(source: str | None = None, min_fields: int = 3) -> int:
-    """Delete TenderDocumentDetails rows that are too sparse to be useful.
-
-    A row is considered sparse when BidBondAmount is effectively missing
-    (NULL, blank, zero-ish, or N/A) and fewer than `min_fields` other key
-    fields have a value. Only active tenders (deadline in the future or no
-    deadline) are considered so we don't waste cycles on expired tenders.
-    """
-    sql = f"""
-    DELETE d FROM TenderDocumentDetails d
-    JOIN ScrapedTenders t ON t.Id = d.TenderId
-    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
-      AND (
-            d.BidBondAmount IS NULL OR
-            LTRIM(RTRIM(d.BidBondAmount)) = '' OR
-            UPPER(LTRIM(RTRIM(d.BidBondAmount))) IN ('0', '0.0', '0.00', 'N/A', 'NA', 'NONE', 'NULL', 'KES 0', 'KES 0.0', 'KES 0.00')
-          )
-      AND (
-            (CASE WHEN d.BidBondForm            IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.BidBondValidity         IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.BidValidityPeriod       IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.SubmissionDeadline      IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.SubmissionMethod        IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.PreBidMeetingDate       IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.MinAnnualTurnover       IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.MinLiquidAssets         IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.MinSingleContractValue  IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.MinCombinedContractValue IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.CashFlowRequirement     IS NULL THEN 0 ELSE 1 END) +
-            (CASE WHEN d.AuditedFinancialsYears  IS NULL THEN 0 ELSE 1 END)
-          ) < {min_fields}
-    """
-    params = []
-    if source:
-        sql += " AND t.Source = ?"
-        params.append(source)
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, *params)
-        deleted = cur.rowcount
-        conn.commit()
-    log.info("Deleted %d sparse parse records (min_fields=%d).", deleted, min_fields)
-    return deleted
-
-
-def reset_zero_bidbond_parses(source: str | None = None) -> int:
-    """Delete TenderDocumentDetails rows where BidBondAmount is missing or zero,
-    regardless of how many other fields are populated, so they get re-parsed."""
-    sql = """
-    DELETE d FROM TenderDocumentDetails d
-    JOIN ScrapedTenders t ON t.Id = d.TenderId
-    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
-      AND (
-            d.BidBondAmount IS NULL OR
-            LTRIM(RTRIM(d.BidBondAmount)) = '' OR
-            UPPER(LTRIM(RTRIM(d.BidBondAmount))) IN ('0', '0.0', '0.00', 'N/A', 'NA', 'NONE', 'NULL', 'KES 0', 'KES 0.0', 'KES 0.00')
-          )
-    """
-    params = []
-    if source:
-        sql += " AND t.Source = ?"
-        params.append(source)
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, *params)
-        deleted = cur.rowcount
-        conn.commit()
-    log.info("Deleted %d zero-bidbond parse records.", deleted)
-    return deleted
-
-
-def reset_low_bidbond_parses(source: str | None = None, min_val: int = 50, max_val: int = 3000) -> int:
-    """Delete TenderDocumentDetails rows where the numeric bid bond amount is
-    suspiciously low (between min_val and max_val), indicating a parse error
-    e.g. '500' was extracted instead of '500,000'."""
-    sql = f"""
-    DELETE d FROM TenderDocumentDetails d
-    JOIN ScrapedTenders t ON t.Id = d.TenderId
-    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
-      AND d.BidBondAmount IS NOT NULL
-      AND TRY_CAST(
-            REPLACE(REPLACE(UPPER(LTRIM(RTRIM(d.BidBondAmount))), 'KES ', ''), ',', '')
-          AS DECIMAL(18,2)) BETWEEN {min_val} AND {max_val}
-    """
-    params = []
-    if source:
-        sql += " AND t.Source = ?"
-        params.append(source)
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, *params)
-        deleted = cur.rowcount
-        conn.commit()
-    log.info("Deleted %d low-bidbond parse records (range %d–%d).", deleted, min_val, max_val)
-    return deleted
-
-
-def reset_tiny_bidbond_parses(source: str | None = None) -> int:
-    """Delete TenderDocumentDetails rows where the numeric bid bond amount is
-    between 1 and 49 (exclusive of 0 and 50), indicating a parse error."""
-    sql = """
-    DELETE d FROM TenderDocumentDetails d
-    JOIN ScrapedTenders t ON t.Id = d.TenderId
-    WHERE (t.Deadline IS NULL OR t.Deadline >= GETUTCDATE())
-      AND d.BidBondAmount IS NOT NULL
-      AND TRY_CAST(
-            REPLACE(REPLACE(UPPER(LTRIM(RTRIM(d.BidBondAmount))), 'KES ', ''), ',', '')
-          AS DECIMAL(18,2)) BETWEEN 1 AND 49
-    """
-    params = []
-    if source:
-        sql += " AND t.Source = ?"
-        params.append(source)
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, *params)
-        deleted = cur.rowcount
-        conn.commit()
-    log.info("Deleted %d tiny-bidbond parse records (range 1–49).", deleted)
-    return deleted
-
-
-def reset_failed_parses(source: str | None = None) -> int:
-    """Delete TenderDocumentDetails rows where DocumentParsed = 0 so they can be retried."""
-    sql = """
-    DELETE d FROM TenderDocumentDetails d
-    JOIN ScrapedTenders t ON t.Id = d.TenderId
-    WHERE d.DocumentParsed = 0
-    """
-    params = []
-    if source:
-        sql += " AND t.Source = ?"
-        params.append(source)
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, *params)
-        deleted = cur.rowcount
-        conn.commit()
-    log.info("Deleted %d failed parse records.", deleted)
-    return deleted

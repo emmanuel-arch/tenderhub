@@ -3,6 +3,7 @@
 Source: https://kra.go.ke/tenders
 Paginates via ?offset=0,10,20,... (10 tenders per page, ~61 pages).
 Extracts tender titles, release dates, EOI deadlines, and PDF download links.
+Only returns tenders whose deadline has NOT yet passed.
 """
 
 import logging
@@ -16,8 +17,7 @@ import requests
 from bs4 import BeautifulSoup
 from config import KRA_URL, REQUEST_TIMEOUT, USER_AGENT
 
-# KRA's SSL certificate has a hostname mismatch (visible as "Not secure" in browsers).
-# We must skip verification for this specific site.
+# KRA's SSL certificate has a hostname mismatch – skip verification for this site.
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ PAGE_SIZE = 10
 MAX_PAGES = 70  # safety limit
 
 
-def _parse_date(text: str):
+def _parse_date(text: str) -> datetime | None:
     """Parse dates like '2026-04-01' or '2026-03-30'."""
     text = text.strip()
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
@@ -40,10 +40,22 @@ def _parse_date(text: str):
     return None
 
 
+def _is_expired(deadline: datetime | None) -> bool:
+    """Return True if deadline has already passed."""
+    if deadline is None:
+        return False   # unknown → include
+    return deadline < datetime.now()
+
+
 def _scrape_tender_detail(url: str) -> str | None:
     """Visit a KRA tender detail page and return the Download Tender Notice URL."""
     try:
-        resp = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT, verify=False)
+        resp = requests.get(
+            url,
+            headers={"User-Agent": USER_AGENT},
+            timeout=REQUEST_TIMEOUT,
+            verify=False,
+        )
         resp.raise_for_status()
     except requests.RequestException as exc:
         log.warning("Failed to fetch KRA detail page %s: %s", url, exc)
@@ -60,13 +72,6 @@ def _parse_page(html: str) -> list[dict]:
     """Parse a single KRA tenders page and return a list of tender dicts."""
     soup = BeautifulSoup(html, "lxml")
     tenders: list[dict] = []
-
-    # KRA page structure:
-    #   div.doc-container > div.doc-wrapper > div.row
-    #     col: div.doc-title > p.subtitle "Tender Title" + p (actual title)
-    #     col: div.doc-title > p.subtitle "Document Release Date" + p (date)
-    #     col: div.doc-title > p.subtitle "Last Date for ..." + p (date)
-    #     col: div.doc-btn > a "View Tender" (href=/component/kra_tenders/tender/{id})
 
     rows = soup.select("div.doc-wrapper")
 
@@ -89,8 +94,10 @@ def _parse_page(html: str) -> list[dict]:
                 if title_el:
                     title = title_el.get_text(strip=True)
                 else:
-                    ps = [p for p in dt.select("p")
-                          if "subtitle" not in " ".join(p.get("class", []))]
+                    ps = [
+                        p for p in dt.select("p")
+                        if "subtitle" not in " ".join(p.get("class", []))
+                    ]
                     if ps:
                         title = ps[0].get_text(strip=True)
 
@@ -109,12 +116,16 @@ def _parse_page(html: str) -> list[dict]:
         if view_link and view_link.get("href"):
             href = view_link["href"]
             view_url = urljoin(BASE, href)
-            # Extract ID from /component/kra_tenders/tender/691
             match = re.search(r"/tender/(\d+)", href)
             if match:
                 external_id = match.group(1)
 
         if not title:
+            continue
+
+        # ── Skip expired tenders ───────────────────────────────────────────
+        if _is_expired(deadline):
+            log.debug("KRA: skipping expired tender: %s (deadline %s)", title[:60], deadline)
             continue
 
         # Fetch the PDF download link from the detail page
@@ -140,8 +151,8 @@ def _parse_page(html: str) -> list[dict]:
                 "bid_bond_amount": 0,
                 "document_release_date": release_date,
                 "procurement_method": None,
-                "start_date": None,
-                "end_date": None,
+                "start_date": release_date,
+                "end_date": deadline,
             }
         )
 
@@ -162,7 +173,7 @@ def _detect_total_pages(html: str) -> int:
 
 
 def scrape_kra() -> list[dict]:
-    """Scrape all pages of KRA tenders."""
+    """Scrape all pages of KRA tenders, returning only open (non-expired) ones."""
     log.info("Scraping KRA tenders from %s", KRA_URL)
 
     headers = {"User-Agent": USER_AGENT}
@@ -176,7 +187,7 @@ def scrape_kra() -> list[dict]:
     log.info("KRA: detected %d pages.", total_pages)
 
     all_tenders: list[dict] = _parse_page(resp.text)
-    log.info("KRA page 1: %d tenders.", len(all_tenders))
+    log.info("KRA page 1: %d open tenders.", len(all_tenders))
 
     # Paginate through remaining pages
     for page in range(2, total_pages + 1):
@@ -187,17 +198,16 @@ def scrape_kra() -> list[dict]:
             resp.raise_for_status()
             page_tenders = _parse_page(resp.text)
             all_tenders.extend(page_tenders)
-            log.info("KRA page %d (offset %d): %d tenders.", page, offset, len(page_tenders))
+            log.info("KRA page %d (offset %d): %d open tenders.", page, offset, len(page_tenders))
 
             if not page_tenders:
                 log.info("KRA: empty page %d, stopping.", page)
                 break
 
-            # Be polite — small delay between requests
             time.sleep(0.5)
         except requests.RequestException as exc:
             log.warning("KRA page %d failed: %s", page, exc)
             continue
 
-    log.info("KRA: found %d total tenders across %d pages.", len(all_tenders), total_pages)
+    log.info("KRA: found %d open tenders total across %d pages.", len(all_tenders), total_pages)
     return all_tenders

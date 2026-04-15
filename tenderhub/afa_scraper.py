@@ -2,9 +2,13 @@
 
 Source: https://www.afa.go.ke/tenders/
 Extracts *current* tender titles and their PDF download URLs.
+Only current (non-expired) tenders are returned.
 """
 
 import logging
+import re
+from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
 from config import AFA_URL, REQUEST_TIMEOUT, USER_AGENT
@@ -15,8 +19,28 @@ SOURCE = "AFA"
 PROCURING_ENTITY = "Agriculture & Food Authority (AFA)"
 
 
+def _parse_date(text: str) -> datetime | None:
+    """Try common date formats."""
+    if not text:
+        return None
+    text = text.strip()
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d",
+                "%d %B %Y", "%B %d, %Y", "%d %b %Y"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def _is_expired(deadline: datetime | None) -> bool:
+    if deadline is None:
+        return False   # unknown deadline → include
+    return deadline < datetime.now()
+
+
 def scrape_afa() -> list[dict]:
-    """Return a list of tender dicts from the AFA current tenders page."""
+    """Return a list of open tender dicts from the AFA current tenders page."""
     log.info("Scraping AFA tenders from %s", AFA_URL)
 
     headers = {"User-Agent": USER_AGENT}
@@ -33,35 +57,50 @@ def scrape_afa() -> list[dict]:
     in_current = False
     past_reached = False
 
-    for element in soup.find_all(["h2", "h3", "h4", "a"]):
-        # Detect section boundaries
-        if element.name in ("h2",):
+    for element in soup.find_all(["h2", "h3", "h4", "a", "p"]):
+        # ── Detect section boundaries ──────────────────────────────────────
+        if element.name in ("h2", "h3", "h4"):
             text = element.get_text(strip=True).upper()
             if "CURRENT TENDERS" in text:
                 in_current = True
                 past_reached = False
                 continue
-            if "PAST TENDERS" in text:
+            if "PAST TENDERS" in text or "CLOSED TENDERS" in text:
                 in_current = False
                 past_reached = True
                 continue
 
         if past_reached and not in_current:
-            # Once past tenders start appearing we can stop altogether
-            # (only if we already collected current ones).
             if tenders:
                 break
 
         if not in_current:
             continue
 
-        # Collect download links
+        # ── Collect download links ─────────────────────────────────────────
         if element.name == "a" and "default-btn-shortcode" in (
             " ".join(element.get("class", []))
         ):
             title = (element.get("title") or "").strip()
             href = (element.get("href") or "").strip()
             if not title or not href:
+                continue
+
+            # Try to find a deadline in the surrounding text
+            deadline = None
+            parent = element.parent
+            if parent:
+                parent_text = parent.get_text(" ", strip=True)
+                # Look for patterns like "Deadline: 30/04/2026" or "Closing Date: ..."
+                date_m = re.search(
+                    r'(?:deadline|closing\s+date|closes?)[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{4})',
+                    parent_text, re.IGNORECASE
+                )
+                if date_m:
+                    deadline = _parse_date(date_m.group(1))
+
+            if _is_expired(deadline):
+                log.debug("AFA: skipping expired tender: %s", title[:60])
                 continue
 
             tenders.append(
@@ -71,7 +110,7 @@ def scrape_afa() -> list[dict]:
                     "title": title,
                     "tender_number": None,
                     "procuring_entity": PROCURING_ENTITY,
-                    "deadline": None,
+                    "deadline": deadline,
                     "category": "Government",
                     "sub_category": None,
                     "summary": title,
@@ -83,9 +122,9 @@ def scrape_afa() -> list[dict]:
                     "document_release_date": None,
                     "procurement_method": None,
                     "start_date": None,
-                    "end_date": None,
+                    "end_date": deadline,
                 }
             )
 
-    log.info("AFA: found %d current tenders.", len(tenders))
+    log.info("AFA: found %d open current tenders.", len(tenders))
     return tenders
