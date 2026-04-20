@@ -19,9 +19,17 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TenderHub Kenya — Your Gateway to Opportunities",
+  title: "BirgenAI — Kenya's Tender Command Center",
   description:
     "Access comprehensive tender opportunities from government ministries, county governments, and private sector organizations. All in one centralized platform.",
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
